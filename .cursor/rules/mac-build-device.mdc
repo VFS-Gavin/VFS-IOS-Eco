@@ -1,0 +1,13 @@
+---
+description: Worker Mac is the Xcode build machine; code stays in this repo
+alwaysApply: true
+---
+
+# Mac build device
+
+- This Windows repo is where code is written. The worker Mac is the build machine (Xcode, simulator, device builds).
+- SSH: `getmanski@10.129.151.140`
+- Project path on the Mac: `/Users/getmanski/Desktop/VFS IOS Eco`
+- Run builds, `xcodebuild`, and the simulator on the Mac.
+- Do not install git on the Mac. Sync with `rsync` or `scp` only.
+- Do not copy code from the Mac back into this repo unless that is the actual intent (for example, Xcode project setting changes made on the Mac).

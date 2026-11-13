@@ -1,0 +1,18 @@
+---
+description: Git branch, worktree, and secret rules for this repo
+alwaysApply: true
+---
+
+# Git workflow
+
+- Every change goes on its own branch, then merges into `master` with `git merge --no-ff`.
+- Prefer a separate worktree. Git creates the folder; any path outside this repo works:
+
+```bash
+git worktree add ../_worktrees/vfseco-<branch> -b <branch>
+```
+
+- Develop the change in that worktree. From `master` in the main checkout: `git merge --no-ff <branch>`.
+- Never commit `.env`. It holds the app key and local settings. Leave it unstaged. `.env.example` may be committed when it has no secrets.
+- Identity for this repo: Gavin Etmanski, getmanski@vfs.com. Remote: `https://github.com/VFS-Gavin/VFS-IOS-Eco.git`.
+- Do not push, force-push, or deploy unless explicitly asked.
