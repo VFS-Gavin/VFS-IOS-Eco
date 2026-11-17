@@ -44,6 +44,17 @@ nonisolated struct PortfolioProject: Decodable, Equatable, Identifiable {
         case isProfessional = "is_professional"
         case isFeatured = "is_featured"
     }
+
+    static func coverURL(_ raw: String?) -> URL? {
+        guard let raw, !raw.isEmpty else { return nil }
+        if let storage = raw.range(of: "/storage/") {
+            let rest = String(raw[storage.upperBound...])
+            if rest.hasPrefix("http://") || rest.hasPrefix("https://") {
+                return URL(string: rest)
+            }
+        }
+        return URL(string: raw)
+    }
 }
 
 nonisolated struct PortfolioProfile: Decodable, Equatable {
