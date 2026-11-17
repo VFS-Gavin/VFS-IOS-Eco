@@ -210,4 +210,22 @@ final class VFS_IOS_EcoTests: XCTestCase {
         XCTAssertEqual(directory.members(program: "all", role: "", search: "cameras").map(\.name), ["First Listed"])
         XCTAssertEqual(directory.roles, ["Head Instructor", "Instructor"])
     }
+
+    func testPortfolioFeedDecodesAProjectAndAStringProgram() throws {
+        let data = """
+        {"professional_layout":false,"industry_view":false,"projects":{"current_page":1,"data":[
+          {"id":9,"title":"The Salvage","slug":"the-salvage","is_professional":true,"is_featured":false,"category":"film_production","cover":"https://example.test/cover.jpg","profile":{"slug":"chris","role":null,"program":["film_production"],"program_label":"Film Production","location":"Vancouver, BC","skills":["DI"],"open_to_work":false,"open_to_collab":true,"projects_count":2},"user":{"id":15,"name":"Chris Andersen","profile_photo_url":null}},
+          {"id":10,"title":"One Program","slug":"one-program","is_professional":false,"is_featured":true,"category":null,"cover":null,"profile":{"program":"acting","program_label":"Acting"},"user":{"name":"Pat"}}
+        ],"last_page":2,"total":25}}
+        """.data(using: .utf8)!
+        let feed = try JSONDecoder().decode(PortfolioFeed.self, from: data)
+        XCTAssertEqual(feed.projects.total, 25)
+        XCTAssertTrue(feed.projects.hasMore)
+        XCTAssertEqual(feed.projects.data.first?.title, "The Salvage")
+        XCTAssertEqual(feed.projects.data.first?.profile.program, ["film_production"])
+        XCTAssertEqual(feed.projects.data.first?.profile.programLabel, "Film Production")
+        XCTAssertEqual(feed.projects.data.first?.user.name, "Chris Andersen")
+        XCTAssertEqual(feed.projects.data.last?.profile.program, ["acting"])
+        XCTAssertNil(feed.projects.data.last?.cover)
+    }
 }

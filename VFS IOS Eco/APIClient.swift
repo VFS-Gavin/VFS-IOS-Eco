@@ -97,6 +97,24 @@ nonisolated struct APIClient {
         return try JSONDecoder().decode(InstructorDirectory.self, from: response.data)
     }
 
+    func portfolio(search: String, professional: Bool, page: Int) async throws -> PortfolioFeed {
+        var query = [URLQueryItem(name: "page", value: String(page))]
+        let trimmed = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            query.append(URLQueryItem(name: "search", value: trimmed))
+        }
+        if professional {
+            query.append(URLQueryItem(name: "professional", value: "1"))
+        }
+        let response = try await send(path: "/api/creative/portfolio", method: "GET", body: nil, authorize: true, query: query)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(PortfolioFeed.self, from: response.data)
+    }
+
     func welcome() async throws -> WelcomeHome {
         let response = try await send(path: "/api/welcome", method: "GET", body: nil, authorize: true)
         if response.status == 401 {
@@ -112,9 +130,12 @@ nonisolated struct APIClient {
         var data: Data
     }
 
-    private func send(path: String, method: String, body: [String: String]?, authorize: Bool) async throws -> RawResponse {
+    private func send(path: String, method: String, body: [String: String]?, authorize: Bool, query: [URLQueryItem] = []) async throws -> RawResponse {
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
         components?.path = path
+        if !query.isEmpty {
+            components?.queryItems = query
+        }
         guard let url = components?.url else {
             throw APIError.message("The app is missing its server address.")
         }
