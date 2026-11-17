@@ -53,6 +53,7 @@ nonisolated enum WelcomeRoute: Hashable {
     case schoolInfo
     case oDay
     case coordinator
+    case forms
     case summary(title: String, description: String)
 
     init(card: WelcomeCard) {
@@ -63,6 +64,8 @@ nonisolated enum WelcomeRoute: Hashable {
             self = .oDay
         case "/welcome/coordinator":
             self = .coordinator
+        case "/welcome/forms":
+            self = .forms
         default:
             self = .summary(title: card.title, description: card.description)
         }

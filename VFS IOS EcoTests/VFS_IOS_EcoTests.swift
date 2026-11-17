@@ -71,6 +71,58 @@ final class VFS_IOS_EcoTests: XCTestCase {
         XCTAssertEqual(url?.absoluteString, "https://welcome.vfs.com/schedules/MKD_Sample%20Schedule_T1_Sep_2025.pdf")
     }
 
+    func testFormsListOpensTheFiveRequests() {
+        XCTAssertEqual(
+            WelcomeRoute(card: WelcomeCard(title: "Forms, Documents, & Requests", description: "Submit forms, update contacts, and request documents", path: "/welcome/forms")),
+            .forms
+        )
+        let links = WelcomeFormCatalog.groups.flatMap(\.items).compactMap(\.link)
+        XCTAssertEqual(links, [.survey, .parentConsent, .contact, .confidential, .t2202])
+    }
+
+    func testParentConsentOmitsBlankContactsAndSendsTheDeclaration() {
+        let body = FormDrafts.parentConsent(
+            person1Name: "Pat",
+            person1Relationship: "",
+            person1Phone: "",
+            person1Email: "",
+            person2Name: "",
+            person2Relationship: "",
+            person2Phone: "",
+            person2Email: "",
+            studentName: "Ada",
+            studentSignature: "Ada",
+            date: "2026-11-17",
+            consent: true
+        )
+
+        XCTAssertEqual(body["student_name"] as? String, "Ada")
+        XCTAssertEqual(body["consent_acknowledged"] as? Bool, true)
+        XCTAssertEqual(body["person1_name"] as? String, "Pat")
+        XCTAssertNil(body["person1_email"])
+        XCTAssertNil(body["person2_name"])
+    }
+
+    func testQuestionnairePayloadUsesOptionKeys() throws {
+        let data = """
+        {"already_submitted":false,"questions":[{"id":"q1_why_vfs","prompt":"Why did you choose VFS?","hint":"pick top 3","kind":"multi","min":1,"max":3,"required":true,"options":[{"key":"reputation","label":"VFS' reputation and recognition"}]}]}
+        """.data(using: .utf8)!
+        let form = try JSONDecoder().decode(SurveyForm.self, from: data)
+        XCTAssertEqual(form.questions.first?.options?.first?.key, "reputation")
+        XCTAssertFalse(form.alreadySubmitted)
+
+        var draft = QuestionnaireDraft()
+        draft.selections["q1_why_vfs"] = ["reputation", "alumni"]
+        draft.ranks = ["1": "talent", "2": "luck", "3": "other"]
+        draft.agreements = ["prefer_challenge": 4]
+        let payload = draft.payload()
+        XCTAssertEqual(payload["q1_why_vfs"] as? [String], ["reputation", "alumni"])
+        let ranks = payload["q6_success_factors"] as? [String: String]
+        XCTAssertEqual(ranks?["1"], "talent")
+        let agreements = payload["q17_agreement_rankings"] as? [String: Int]
+        XCTAssertEqual(agreements?["prefer_challenge"], 4)
+    }
+
     func testSignInLinkReadsTheTokenFromTheUniversalLink() {
         let url = URL(string: "https://welcome.vfs.com/auth/app/magic-link/abcdefghijklmnopqrstuvwxyz012345")!
         XCTAssertEqual(SignInLink.token(from: url), "abcdefghijklmnopqrstuvwxyz012345")
