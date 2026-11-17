@@ -52,11 +52,16 @@ struct RootScreen: View {
     @ViewBuilder
     private var signedIn: some View {
         if session.account?.welcomeHub == true {
-            WelcomeHubView(session: session)
+            TabView {
+                WelcomeHubView(session: session)
+                    .tabItem { Label("Welcome", systemImage: "house") }
+                PortfolioScreen(session: session, navigationTitle: "Creative ECOsystem", industryLine: false)
+                    .tabItem { Label("Creative", systemImage: "square.grid.2x2") }
+            }
         } else if session.account?.home == "portfolio" {
-            DestinationView(title: "Portfolio", subtitle: "Creative ECOsystem", session: session)
+            PortfolioScreen(session: session, navigationTitle: "Portfolio", industryLine: false)
         } else {
-            DestinationView(title: "Creative ECOsystem", subtitle: "Portfolio, collabs, and jobs", session: session)
+            PortfolioScreen(session: session, navigationTitle: "Creative ECOsystem", industryLine: true)
         }
     }
 }
@@ -319,6 +324,7 @@ extension Color {
     static let stoneInk = Color(red: 28 / 255, green: 25 / 255, blue: 23 / 255)
     static let stoneLabel = Color(red: 168 / 255, green: 162 / 255, blue: 158 / 255)
     static let welcomeRed = Color(red: 139 / 255, green: 26 / 255, blue: 26 / 255)
+    static let ecoOrange = Color(red: 234 / 255, green: 88 / 255, blue: 12 / 255)
 
     init?(hex: String) {
         let cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
