@@ -4,6 +4,7 @@ import UIKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("theme") private var theme = ""
     @State private var session: AppSession?
     @State private var pendingLink: URL?
@@ -29,6 +30,10 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(AppTheme.scheme(for: theme))
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, let session else { return }
+            Task { await session.refresh() }
+        }
     }
 
     private func openPendingLink() {
@@ -54,12 +59,17 @@ struct RootScreen: View {
 
     @ViewBuilder
     private var signedIn: some View {
-        if session.account?.welcomeHub == true {
-            PortalTabs(session: session)
-        } else if session.account?.home == "portfolio" {
-            PortfolioScreen(session: session, navigationTitle: "Portfolio", industryLine: false)
-        } else {
-            PortfolioScreen(session: session, navigationTitle: "Creative ECOsystem", industryLine: true)
+        ZStack {
+            if session.account?.welcomeHub == true {
+                PortalTabs(session: session)
+            } else if session.account?.home == "portfolio" {
+                PortfolioScreen(session: session, navigationTitle: "Portfolio", industryLine: false)
+            } else {
+                PortfolioScreen(session: session, navigationTitle: "Creative ECOsystem", industryLine: true)
+            }
+            if session.account?.needsTerms == true {
+                TermsGateView(session: session)
+            }
         }
     }
 }

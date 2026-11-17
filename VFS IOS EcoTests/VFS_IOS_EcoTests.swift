@@ -13,6 +13,30 @@ final class VFS_IOS_EcoTests: XCTestCase {
         XCTAssertEqual(account.home, "welcome")
         XCTAssertTrue(account.welcomeHub)
         XCTAssertTrue(account.setUpPortfolio)
+        XCTAssertFalse(account.needsTerms)
+    }
+
+    func testTermsGateFollowsTheWebsiteVersion() throws {
+        let open = """
+        {"home":"welcome","welcome_hub":true,"creative":"full","set_up_portfolio":false,"user":{"id":1,"name":"Ada","email":"ada@vfs.edu","role":"student"},"terms":{"accepted_at":null,"version_accepted":0,"current_version":2,"dismiss_count":0,"hard_blocked":false}}
+        """.data(using: .utf8)!
+        let blocked = """
+        {"home":"portfolio","welcome_hub":false,"creative":"full","set_up_portfolio":false,"user":{"id":2,"name":"Ada","email":"ada@vfs.edu","role":"alumni"},"terms":{"accepted_at":null,"version_accepted":0,"current_version":2,"dismiss_count":3,"hard_blocked":true}}
+        """.data(using: .utf8)!
+        let current = """
+        {"home":"welcome","welcome_hub":true,"creative":"full","set_up_portfolio":false,"user":{"id":3,"name":"Ada","email":"ada@vfs.edu","role":"student"},"terms":{"accepted_at":"2026-11-17T00:00:00Z","version_accepted":2,"current_version":2,"dismiss_count":0,"hard_blocked":false}}
+        """.data(using: .utf8)!
+
+        let soft = try JSONDecoder().decode(Account.self, from: open)
+        let hard = try JSONDecoder().decode(Account.self, from: blocked)
+        let done = try JSONDecoder().decode(Account.self, from: current)
+
+        XCTAssertTrue(soft.needsTerms)
+        XCTAssertEqual(soft.terms?.dismissesLeft, 3)
+        XCTAssertFalse(soft.terms?.hardBlocked ?? true)
+        XCTAssertTrue(hard.needsTerms)
+        XCTAssertEqual(hard.terms?.hardBlocked, true)
+        XCTAssertFalse(done.needsTerms)
     }
 
     func testWelcomeGroupsKeepSchoolInfoAsOneCard() throws {
