@@ -79,6 +79,10 @@ final class VFS_IOS_EcoTests: XCTestCase {
             WelcomeRoute(card: WelcomeCard(title: "Study Permit Guide", description: "Step-by-step visa application process", path: "/welcome/study-permit")),
             .studyPermit
         )
+        XCTAssertEqual(
+            WelcomeRoute(card: WelcomeCard(title: "Instructors", description: "Meet the VFS faculty", path: "/welcome/instructors")),
+            .instructors
+        )
         let url = SchoolInfoCatalog.scheduleURL(
             file: "MKD_Sample Schedule_T1_Sep_2025.pdf",
             base: URL(string: "https://welcome.vfs.com")!
@@ -144,5 +148,29 @@ final class VFS_IOS_EcoTests: XCTestCase {
         let appLink = URL(string: "vfseco://auth/app/magic-link/abcdefghijklmnopqrstuvwxyz012345")!
         XCTAssertEqual(SignInLink.token(from: appLink), "abcdefghijklmnopqrstuvwxyz012345")
         XCTAssertNil(SignInLink.token(from: URL(string: "https://welcome.vfs.com/welcome")!))
+    }
+
+    func testInstructorsDecodeAnEmptyListAndAProgramGroup() throws {
+        let empty = try JSONDecoder().decode(InstructorDirectory.self, from: Data("{\"faculty\":[],\"programs\":[]}".utf8))
+        XCTAssertTrue(empty.everyone.isEmpty)
+        XCTAssertTrue(empty.programs.isEmpty)
+
+        let data = """
+        {"faculty":{"film-production":[
+          {"id":1,"name":"First Listed","title":"Head Instructor","bio":"Teaches cameras.","photo_url":"https://example.test/first.jpg","imdb_url":"https://www.imdb.com/name/nm0000001/","program":"Film Production","program_slug":"film-production","sort_order":1},
+          {"id":2,"name":"Second Listed","title":"Instructor","bio":null,"program":"Film Production","program_slug":"film-production","sort_order":2}
+        ],"3d-animation-visual-effects":[
+          {"id":3,"name":"Animation Lead","title":"Instructor","bio":null,"program":"3D Animation & Visual Effects","program_slug":"3d-animation-visual-effects","sort_order":1}
+        ]},"programs":[
+          {"program":"3D Animation & Visual Effects","program_slug":"3d-animation-visual-effects"},
+          {"program":"Film Production","program_slug":"film-production"}
+        ]}
+        """.data(using: .utf8)!
+        let directory = try JSONDecoder().decode(InstructorDirectory.self, from: data)
+        XCTAssertEqual(directory.programs.map(\.program), ["3D Animation & Visual Effects", "Film Production"])
+        XCTAssertEqual(directory.everyone.map(\.name), ["Animation Lead", "First Listed", "Second Listed"])
+        XCTAssertEqual(directory.members(program: "film-production", role: "Head Instructor", search: "").map(\.name), ["First Listed"])
+        XCTAssertEqual(directory.members(program: "all", role: "", search: "cameras").map(\.name), ["First Listed"])
+        XCTAssertEqual(directory.roles, ["Head Instructor", "Instructor"])
     }
 }
