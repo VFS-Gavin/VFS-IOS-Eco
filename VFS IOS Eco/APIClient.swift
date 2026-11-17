@@ -122,6 +122,24 @@ nonisolated struct APIClient {
         return try JSONDecoder().decode(PortfolioFeed.self, from: response.data)
     }
 
+    func welcomeAnnouncements() async throws -> WelcomeAnnouncements {
+        try await authorized(WelcomeAnnouncements.self, path: "/api/welcome/announcements")
+    }
+
+    func creativeAnnouncements() async throws -> CreativeAnnouncements {
+        try await authorized(CreativeAnnouncements.self, path: "/api/creative/announcements")
+    }
+
+    private func authorized<T: Decodable>(_ type: T.Type, path: String) async throws -> T {
+        let response = try await send(path: path, method: "GET", body: nil, authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(type, from: response.data)
+    }
+
     func welcome() async throws -> WelcomeHome {
         let response = try await send(path: "/api/welcome", method: "GET", body: nil, authorize: true)
         if response.status == 401 {

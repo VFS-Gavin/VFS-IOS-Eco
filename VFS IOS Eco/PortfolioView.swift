@@ -56,6 +56,8 @@ struct PortfolioView: View {
     private var projectList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                CreativeAlerts(session: session)
+
                 Text("Creative ECOsystem")
                     .font(.system(.largeTitle, design: .serif))
                     .foregroundStyle(Color.stoneInk)

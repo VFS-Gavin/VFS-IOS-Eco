@@ -32,8 +32,8 @@ final class VFS_IOS_EcoTests: XCTestCase {
         XCTAssertEqual(WelcomeRoute(card: WelcomeCard(title: "O-Day Reminder", description: "Orientation schedule and details", path: "/welcome/o-day")), .oDay)
         XCTAssertEqual(WelcomeRoute(card: WelcomeCard(title: "Contact Coordinator", description: "Get in touch with your admissions coordinator", path: "/welcome/coordinator")), .coordinator)
         XCTAssertEqual(
-            WelcomeRoute(card: WelcomeCard(title: "Campus Tour", description: "Campus map & locations", path: "/welcome/campus-tour")),
-            .summary(title: "Campus Tour", description: "Campus map & locations")
+            WelcomeRoute(card: WelcomeCard(title: "Housing", description: "Find a place to live", path: "/welcome/housing")),
+            .summary(title: "Housing", description: "Find a place to live")
         )
     }
 
@@ -227,6 +227,28 @@ final class VFS_IOS_EcoTests: XCTestCase {
         XCTAssertEqual(feed.projects.data.first?.user.name, "Chris Andersen")
         XCTAssertEqual(feed.projects.data.last?.profile.program, ["acting"])
         XCTAssertNil(feed.projects.data.last?.cover)
+    }
+
+    func testAnnouncementsStayOnTheirOwnTabs() throws {
+        let welcome = """
+        {"student_announcements":[{"title":"Webinar night","date":"November 24, 2026","event_date":"2026-11-24T00:00:00.000000Z","time":"6:00 PM","type":"Webinar","summary":"Join us","location":"Online"}],"notifications":[{"id":4,"title":"Welcome only","body":"Hub news","type":"info","link":"/welcome","link_label":"Open","image_url":null,"published_at":"2026-11-17T00:00:00+00:00","portal":"welcome_hub"}]}
+        """.data(using: .utf8)!
+        let hub = try JSONDecoder().decode(WelcomeAnnouncements.self, from: welcome)
+        XCTAssertEqual(hub.studentAnnouncements.first?.title, "Webinar night")
+        XCTAssertEqual(hub.notifications.first?.label, "Announcement")
+        XCTAssertEqual(AnnouncementLink.url("/welcome", base: URL(string: "https://welcome.vfs.com")!)?.absoluteString, "https://welcome.vfs.com/welcome")
+        XCTAssertEqual(AchievementCatalog.items.count, 8)
+        XCTAssertEqual(AchievementCatalog.items.first?.date, "January 14, 2026")
+
+        let creative = """
+        {"notifications":[{"id":9,"title":"Creative only","body":"Portfolio news","type":"urgent","link":null,"link_label":null,"image_url":null,"published_at":null}]}
+        """.data(using: .utf8)!
+        let feed = try JSONDecoder().decode(CreativeAnnouncements.self, from: creative)
+        XCTAssertEqual(feed.notifications.first?.label, "Important")
+        XCTAssertEqual(
+            WelcomeRoute(card: WelcomeCard(title: "Student Announcements", description: "VFS achievements, events and webinars", path: "/welcome/student-announcements")),
+            .announcements
+        )
         XCTAssertEqual(
             PortfolioProject.coverURL("http://10.129.151.17:8005/storage/https://picsum.photos/seed/salvage-grade/800/600")?.absoluteString,
             "https://picsum.photos/seed/salvage-grade/800/600"
