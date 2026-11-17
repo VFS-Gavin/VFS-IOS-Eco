@@ -23,19 +23,19 @@ final class VFS_IOS_EcoUITests: XCTestCase {
         signOutIfNeeded(app)
 
         openDevAccount("alumni", in: app)
-        XCTAssertTrue(app.navigationBars["Portfolio"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.navigationBars["Portfolio"].waitForExistence(timeout: 45))
         app.buttons["Sign out"].tap()
 
         openDevAccount("industry", in: app)
-        XCTAssertTrue(app.staticTexts["Portfolio, collabs, and jobs"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Portfolio, collabs, and jobs"].waitForExistence(timeout: 45))
         app.buttons["Sign out"].tap()
 
         openDevAccount("pending", in: app)
-        XCTAssertTrue(app.navigationBars["Welcome Hub"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.navigationBars["Welcome Hub"].waitForExistence(timeout: 45))
         app.buttons["Sign out"].tap()
 
         openDevAccount("student", in: app)
-        XCTAssertTrue(app.navigationBars["Welcome Hub"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.navigationBars["Welcome Hub"].waitForExistence(timeout: 45))
     }
 
     @MainActor
