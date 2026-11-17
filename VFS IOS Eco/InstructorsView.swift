@@ -63,7 +63,7 @@ struct InstructorsView: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .padding()
-                .background(Color.white)
+                .background(Color.card)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .accessibilityIdentifier("instructor-search")
 
@@ -99,7 +99,7 @@ struct InstructorsView: View {
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(program == slug ? Color.welcomeRed : Color.white)
+                .background(program == slug ? Color.welcomeRed : Color.card)
                 .foregroundStyle(program == slug ? Color.white : Color.stoneInk)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }

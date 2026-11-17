@@ -109,7 +109,7 @@ struct HubCard: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color.card)
         .clipShape(RoundedRectangle(cornerRadius: 24))
         .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color.stoneLine, lineWidth: 1))
     }
@@ -145,8 +145,8 @@ struct CreativeSearchField: View {
             .submitLabel(.search)
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(Color.white)
-            .overlay(Rectangle().stroke(Color(red: 214 / 255, green: 211 / 255, blue: 209 / 255), lineWidth: 1))
+            .background(Color.card)
+            .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
             .accessibilityIdentifier(identifier)
             .onSubmit(onSubmit)
     }
@@ -198,14 +198,14 @@ struct GuidePills<Selection: Hashable>: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .foregroundStyle(selection == option ? Color.stoneInk : Color.stoneMuted)
-                        .background(selection == option ? Color.white : Color.clear)
+                        .background(selection == option ? Color.card : Color.clear)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(6)
-        .background(Color.white.opacity(0.55))
+        .background(Color.stoneLine.opacity(0.35))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.stoneLine, lineWidth: 1))
     }
@@ -227,7 +227,7 @@ extension View {
     func guideCard() -> some View {
         padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
+            .background(Color.card)
             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).stroke(Color.stoneLine, lineWidth: 1))
     }
@@ -251,7 +251,7 @@ struct SharpCard<Content: View>: View {
         content
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
+            .background(Color.card)
             .overlay(alignment: .leading) { Rectangle().fill(bar).frame(width: 3) }
             .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
     }

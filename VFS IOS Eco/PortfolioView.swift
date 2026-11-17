@@ -64,6 +64,7 @@ struct PortfolioScreen: View {
                 }
             }
             .toolbar {
+                ThemeToggle()
                 Button("Sign out") { session.signOut() }
             }
             .onAppear {
@@ -147,7 +148,7 @@ struct PortfolioView: View {
                         .foregroundStyle(professional ? Color.ecoOrange : Color.stoneMuted)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
-                        .background(professional ? Color.ecoOrange.opacity(0.08) : Color.white)
+                        .background(professional ? Color.ecoOrange.opacity(0.08) : Color.card)
                         .overlay(Rectangle().stroke(professional ? Color.ecoOrange : Color.stoneLine, lineWidth: 1))
                     }
                     .buttonStyle(.plain)
@@ -222,7 +223,7 @@ struct PortfolioView: View {
             .padding(.vertical, 8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color.card)
         .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
     }
 

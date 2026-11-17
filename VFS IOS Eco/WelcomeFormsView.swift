@@ -374,7 +374,7 @@ struct ConfidentialFormView: View {
                 TextField("Please provide detailed information addressing the questions above...", text: $details, axis: .vertical)
                     .lineLimit(5...10)
                     .padding()
-                    .background(Color.white)
+                    .background(Color.card)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 Text("Please provide as much detail as possible to help us support you effectively.")
                     .font(.footnote)
@@ -524,7 +524,7 @@ struct QuestionnaireFormView: View {
                 TextField("", text: textBinding(question.id), axis: .vertical)
                     .lineLimit(3...8)
                     .padding()
-                    .background(Color.white)
+                    .background(Color.card)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             case "multi":
                 ForEach(question.options ?? []) { option in
@@ -794,7 +794,7 @@ private func field(_ title: String, text: Binding<String>, prompt: String = "") 
         TextField(prompt, text: text)
             .textInputAutocapitalization(.never)
             .padding()
-            .background(Color.stone)
+            .background(Color.card)
             .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

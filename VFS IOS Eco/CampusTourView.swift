@@ -115,7 +115,7 @@ struct CampusTourView: View {
                         }
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(selectedID == campus.id ? Color.welcomeRed : Color.white)
+                        .background(selectedID == campus.id ? Color.welcomeRed : Color.card)
                         .foregroundStyle(selectedID == campus.id ? Color.white : Color.stoneInk)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
@@ -183,7 +183,7 @@ struct CampusTourView: View {
                     .font(.caption.weight(.semibold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color.stone)
+                    .background(Color.card)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             if programs.count > 3 {
