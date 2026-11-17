@@ -153,7 +153,7 @@ struct ODayView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.stoneInk)
+        .background(Color.night)
         .clipShape(RoundedRectangle(cornerRadius: 28))
     }
 

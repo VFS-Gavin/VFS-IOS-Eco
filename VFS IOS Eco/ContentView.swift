@@ -1,8 +1,10 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("theme") private var theme = ""
     @State private var session: AppSession?
     @State private var pendingLink: URL?
 
@@ -26,6 +28,7 @@ struct ContentView: View {
                 openPendingLink()
             }
         }
+        .preferredColorScheme(AppTheme.scheme(for: theme))
     }
 
     private func openPendingLink() {
@@ -81,7 +84,7 @@ struct PortalTabs: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(Color.white)
+            .background(Color.card)
             .overlay(alignment: .top) { Rectangle().fill(Color.stoneLine).frame(height: 1) }
         }
         .background(Color.stone)
@@ -113,6 +116,10 @@ struct SignInView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
+                HStack {
+                    Spacer()
+                    ThemeToggle()
+                }
                 if session.phase == .checkEmail {
                     Text("Check your email")
                         .font(.system(size: 40, weight: .black))
@@ -129,7 +136,7 @@ struct SignInView: View {
                         .autocorrectionDisabled()
                         .padding(.horizontal, 20)
                         .padding(.vertical, 16)
-                        .background(Color.white)
+                        .background(Color.card)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.stoneLine, lineWidth: 1))
                         .accessibilityIdentifier("paste-sign-in-link")
@@ -158,7 +165,7 @@ struct SignInView: View {
                             .autocorrectionDisabled()
                             .padding(.horizontal, 20)
                             .padding(.vertical, 16)
-                            .background(Color.white)
+                            .background(Color.card)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.stoneLine, lineWidth: 1))
                             .accessibilityIdentifier("sign-in-email")
@@ -265,7 +272,7 @@ struct WelcomeHubView: View {
                         .autocorrectionDisabled()
                         .padding(.horizontal, 18)
                         .padding(.vertical, 14)
-                        .background(Color.white)
+                        .background(Color.card)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.stoneLine, lineWidth: 1))
                         .accessibilityIdentifier("welcome-search")
@@ -335,7 +342,7 @@ struct WelcomeHubView: View {
                             NavigationLink(value: WelcomeRoute.coordinator) {
                                 Text("Contact Coordinator")
                                     .font(.body.weight(.bold))
-                                    .foregroundStyle(Color.stoneInk)
+                                    .foregroundStyle(Color.black)
                                     .padding(.horizontal, 22)
                                     .padding(.vertical, 12)
                                     .background(Color.white)
@@ -397,6 +404,7 @@ struct WelcomeHubView: View {
                 }
             }
             .toolbar {
+                ThemeToggle()
                 Button("Sign out") { session.signOut() }
             }
         }
@@ -470,12 +478,52 @@ struct DestinationView: View {
     }
 }
 
+enum AppTheme {
+    static func scheme(for stored: String) -> ColorScheme? {
+        switch stored {
+        case "light": .light
+        case "dark": .dark
+        default: nil
+        }
+    }
+}
+
+struct ThemeToggle: View {
+    @AppStorage("theme") private var theme = ""
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Button {
+            theme = colorScheme == .dark ? "light" : "dark"
+        } label: {
+            Image(systemName: colorScheme == .dark ? "moon.fill" : "sun.max.fill")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(colorScheme == .dark ? Color.stoneInk : Color.pageAmber)
+                .frame(width: 32, height: 32)
+                .background(Color.card)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color.stoneLine, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(colorScheme == .dark ? "Switch to Light Mode" : "Switch to Dark Mode")
+        .accessibilityIdentifier("theme-toggle")
+    }
+}
+
 extension Color {
-    static let stone = Color(red: 250 / 255, green: 250 / 255, blue: 249 / 255)
-    static let stoneInk = Color(red: 28 / 255, green: 25 / 255, blue: 23 / 255)
-    static let stoneLabel = Color(red: 168 / 255, green: 162 / 255, blue: 158 / 255)
-    static let stoneMuted = Color(red: 120 / 255, green: 113 / 255, blue: 108 / 255)
-    static let stoneLine = Color(red: 231 / 255, green: 229 / 255, blue: 228 / 255)
+    static let stone = Color.adaptive(light: 0.98, dark: 0.07)
+    static let card = Color.adaptive(light: 1, dark: 0.10)
+    static let stoneInk = Color.adaptive(light: 0.10, dark: 0.95)
+    static let stoneLabel = Color.adaptive(light: 0.45, dark: 0.65)
+    static let stoneMuted = Color.adaptive(light: 0.45, dark: 0.65)
+    static let stoneLine = Color.adaptive(light: 0.90, dark: 0.20)
+    static let night = Color(white: 17 / 255)
+
+    private static func adaptive(light: CGFloat, dark: CGFloat) -> Color {
+        Color(uiColor: UIColor { traits in
+            UIColor(white: traits.userInterfaceStyle == .dark ? dark : light, alpha: 1)
+        })
+    }
     static let welcomeRed = Color(red: 139 / 255, green: 26 / 255, blue: 26 / 255)
     static let ecoOrange = Color(red: 234 / 255, green: 88 / 255, blue: 12 / 255)
     static let hubBlue = Color(red: 37 / 255, green: 99 / 255, blue: 235 / 255)
