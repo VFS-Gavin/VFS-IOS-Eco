@@ -152,6 +152,97 @@ struct CreativeSearchField: View {
     }
 }
 
+struct GuideHero: View {
+    var lead: String
+    var accent: String
+    var accentColor: Color
+    var detail: String
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(lead)
+                .font(.system(size: 38, weight: .black))
+                .foregroundStyle(Color.stoneInk)
+                .multilineTextAlignment(.center)
+            Text(accent)
+                .font(.system(size: 38, weight: .black))
+                .foregroundStyle(accentColor)
+                .multilineTextAlignment(.center)
+            if !detail.isEmpty {
+                Text(detail)
+                    .font(.title3)
+                    .foregroundStyle(Color.stoneMuted)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.bottom, 8)
+    }
+}
+
+struct GuidePills<Selection: Hashable>: View {
+    var options: [Selection]
+    var title: (Selection) -> String
+    @Binding var selection: Selection
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(options, id: \.self) { option in
+                Button {
+                    selection = option
+                } label: {
+                    Text(title(option))
+                        .font(.system(size: 13, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .foregroundStyle(selection == option ? Color.stoneInk : Color.stoneMuted)
+                        .background(selection == option ? Color.white : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(6)
+        .background(Color.white.opacity(0.55))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.stoneLine, lineWidth: 1))
+    }
+}
+
+struct CrimsonButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.body.weight(.bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(Color.welcomeRed.opacity(configuration.isPressed ? 0.85 : 1))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+extension View {
+    func guideCard() -> some View {
+        padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).stroke(Color.stoneLine, lineWidth: 1))
+    }
+
+    func deskPage(tint: Color = .welcomeRed) -> some View {
+        background {
+            ZStack {
+                Color.stone
+                RadialGradient(colors: [tint.opacity(0.16), .clear], center: .topTrailing, startRadius: 8, endRadius: 340)
+            }
+            .ignoresSafeArea()
+        }
+    }
+}
+
 struct SharpCard<Content: View>: View {
     var bar: Color
     @ViewBuilder var content: Content

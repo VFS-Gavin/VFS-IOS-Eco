@@ -9,22 +9,22 @@ struct WelcomeFormsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                Text("Forms, Documents, & Requests")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("Submit official requests and keep your student record up to date from anywhere.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Forms, Documents, &",
+                    accent: "Requests",
+                    accentColor: .pageSlate,
+                    detail: "Submit official requests and keep your student record up to date from anywhere."
+                )
 
                 ForEach(WelcomeFormCatalog.groups) { group in
                     VStack(alignment: .leading, spacing: 12) {
                         Text(group.label.uppercased())
                             .font(.system(size: 11, weight: .bold))
                             .tracking(1.4)
-                            .foregroundStyle(Color.stoneLabel)
+                            .foregroundStyle(Color.stoneMuted)
                         Text(group.description)
                             .font(.subheadline)
-                            .foregroundStyle(Color.stoneLabel)
+                            .foregroundStyle(Color.stoneMuted)
                         ForEach(group.items) { item in
                             if let link = item.link {
                                 NavigationLink(value: link) {
@@ -46,7 +46,7 @@ struct WelcomeFormsView: View {
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .pageSlate)
         .navigationTitle("Forms")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: WelcomeFormLink.self) { link in
@@ -76,12 +76,9 @@ struct WelcomeFormsView: View {
                 .foregroundStyle(Color.stoneInk)
             Text(item.description)
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
     }
 }
 
@@ -108,7 +105,7 @@ struct ParentConsentFormView: View {
     var body: some View {
         formShell(title: "Parent Consent", confirmation: confirmation, status: status) {
             Text("Admissions Office")
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
             Text("198 W. Hastings St, Vancouver, BC, Canada V6B1H2")
             Text("E: reception198@vfs.com")
             Text("T: 604 685 5808")
@@ -210,7 +207,7 @@ struct ContactUpdateFormView: View {
             section("New Contact Information") {
                 Text("Only fill in the fields you wish to update.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 field("New Email", text: $newEmail)
                 field("New Phone", text: $newPhone)
                 field("New Mobile", text: $newMobile)
@@ -381,17 +378,17 @@ struct ConfidentialFormView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 Text("Please provide as much detail as possible to help us support you effectively.")
                     .font(.footnote)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
             }
             section("Attach Supporting Documents (Optional)") {
                 Text("You may attach supporting documents such as medical documentation, accommodation letters, or previous assessment reports. Maximum 10MB per file.")
                     .font(.footnote)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 Button("Choose files") { picking = true }
                     .tint(Color.welcomeRed)
                 Text("Supported formats: PDF, JPG, PNG, DOC, DOCX")
                     .font(.footnote)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 ForEach(Array(files.enumerated()), id: \.offset) { index, file in
                     HStack {
                         Text(file.filename)
@@ -471,17 +468,21 @@ struct QuestionnaireFormView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Welcome Questionnaire")
-                    .font(.system(.largeTitle, design: .serif))
+                GuideHero(
+                    lead: "Tell Us About",
+                    accent: "You",
+                    accentColor: .welcomeRed,
+                    detail: "Help us understand your goals, creative style, and how we can best support you during your time at VFS."
+                )
                 if let confirmation {
                     Text(confirmation)
-                        .font(.system(.title3, design: .serif))
+                        .font(.system(size: 22, weight: .black))
                 } else if form?.alreadySubmitted == true {
                     Text("You have already submitted this questionnaire.")
                 } else if let form {
                     Text("Your responses are confidential and will only be used to improve your experience at VFS.")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     ForEach(form.questions) { question in
                         questionView(question)
                     }
@@ -492,8 +493,7 @@ struct QuestionnaireFormView: View {
                     Button(isBusy ? "Submitting..." : "Submit Questionnaire") {
                         Task { await send(form) }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.welcomeRed)
+                    .buttonStyle(CrimsonButtonStyle())
                     .disabled(isBusy)
                 } else if let status {
                     Text(status)
@@ -503,7 +503,7 @@ struct QuestionnaireFormView: View {
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage()
         .navigationTitle("Questionnaire")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
@@ -517,7 +517,7 @@ struct QuestionnaireFormView: View {
             if let hint = question.hint {
                 Text(hint)
                     .font(.footnote)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
             }
             switch question.kind {
             case "text":
@@ -568,10 +568,7 @@ struct QuestionnaireFormView: View {
                 EmptyView()
             }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
     }
 
     private func load() async {
@@ -759,8 +756,10 @@ private func formShell<Content: View>(title: String, confirmation: String?, stat
     ScrollView {
         VStack(alignment: .leading, spacing: 16) {
             Text(title)
-                .font(.system(.largeTitle, design: .serif))
+                .font(.system(size: 36, weight: .black))
                 .foregroundStyle(Color.stoneInk)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
             if let confirmation {
                 Text(confirmation)
                     .font(.body)
@@ -774,7 +773,7 @@ private func formShell<Content: View>(title: String, confirmation: String?, stat
         }
         .padding(20)
     }
-    .background(Color.stone)
+    .deskPage()
     .navigationBarTitleDisplayMode(.inline)
 }
 
@@ -782,13 +781,10 @@ private func formShell<Content: View>(title: String, confirmation: String?, stat
 private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
     VStack(alignment: .leading, spacing: 10) {
         Text(title)
-            .font(.system(.title3, design: .serif))
+            .font(.system(size: 22, weight: .black))
         content()
     }
-    .padding(16)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Color.white)
-    .clipShape(RoundedRectangle(cornerRadius: 16))
+    .guideCard()
 }
 
 private func field(_ title: String, text: Binding<String>, prompt: String = "") -> some View {
@@ -805,7 +801,6 @@ private func field(_ title: String, text: Binding<String>, prompt: String = "") 
 
 private func submitButton(_ title: String, enabled: Bool, action: @escaping () async -> Void) -> some View {
     Button(title) { Task { await action() } }
-        .buttonStyle(.borderedProminent)
-        .tint(Color.welcomeRed)
+        .buttonStyle(CrimsonButtonStyle())
         .disabled(!enabled)
 }

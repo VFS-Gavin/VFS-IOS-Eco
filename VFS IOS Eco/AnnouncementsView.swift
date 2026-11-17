@@ -70,7 +70,7 @@ struct AnnouncementCards: View {
                     if let body = item.body, !body.isEmpty {
                         Text(body)
                             .font(.subheadline)
-                            .foregroundStyle(Color.stoneLabel)
+                            .foregroundStyle(Color.stoneMuted)
                     }
                     if let link = item.link, let url = AnnouncementLink.url(link, base: APIConfiguration.baseURL) {
                         Button((item.linkLabel?.isEmpty == false ? item.linkLabel : nil) ?? "Open") {
@@ -80,10 +80,7 @@ struct AnnouncementCards: View {
                         .tint(tint)
                     }
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
                 .overlay(alignment: .leading) { Rectangle().fill(tint).frame(width: 3) }
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.stoneLine, lineWidth: 1))
             }
@@ -118,15 +115,15 @@ struct StudentAnnouncementsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Student Announcements")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("Stay updated with VFS achievements, upcoming events, and opportunities for growth and connection.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Student",
+                    accent: "Announcements",
+                    accentColor: .pagePink,
+                    detail: "Stay updated with VFS achievements, upcoming events, and opportunities for growth and connection."
+                )
 
                 Text("VFS Achievements")
-                    .font(.system(.title3, design: .serif))
+                    .font(.system(size: 22, weight: .black))
                     .foregroundStyle(Color.stoneInk)
                 Button("View all on VFS Blog") {
                     if let url = URL(string: AchievementCatalog.blog) { openURL(url) }
@@ -146,7 +143,7 @@ struct StudentAnnouncementsView: View {
                                 Spacer()
                                 Text(item.date)
                                     .font(.caption)
-                                    .foregroundStyle(Color.stoneLabel)
+                                    .foregroundStyle(Color.stoneMuted)
                             }
                             Text(item.title)
                                 .font(.headline)
@@ -154,19 +151,16 @@ struct StudentAnnouncementsView: View {
                                 .multilineTextAlignment(.leading)
                             Text(item.summary)
                                 .font(.subheadline)
-                                .foregroundStyle(Color.stoneLabel)
+                                .foregroundStyle(Color.stoneMuted)
                                 .multilineTextAlignment(.leading)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .guideCard()
                     }
                     .buttonStyle(.plain)
                 }
 
                 Text("Student Events & Webinars")
-                    .font(.system(.title3, design: .serif))
+                    .font(.system(size: 22, weight: .black))
                     .foregroundStyle(Color.stoneInk)
 
                 switch phase {
@@ -183,12 +177,9 @@ struct StudentAnnouncementsView: View {
                                 .foregroundStyle(Color.stoneInk)
                             Text("Check back soon for new events and webinars!")
                                 .font(.subheadline)
-                                .foregroundStyle(Color.stoneLabel)
+                                .foregroundStyle(Color.stoneMuted)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .guideCard()
                     } else {
                         ForEach(events) { event in
                             VStack(alignment: .leading, spacing: 6) {
@@ -204,35 +195,32 @@ struct StudentAnnouncementsView: View {
                                 if let date = event.date, !date.isEmpty {
                                     Text(date)
                                         .font(.subheadline)
-                                        .foregroundStyle(Color.stoneLabel)
+                                        .foregroundStyle(Color.stoneMuted)
                                 }
                                 if let time = event.time, !time.isEmpty {
                                     Text(time)
                                         .font(.subheadline)
-                                        .foregroundStyle(Color.stoneLabel)
+                                        .foregroundStyle(Color.stoneMuted)
                                 }
                                 if let location = event.location, !location.isEmpty {
                                     Text(location)
                                         .font(.subheadline)
-                                        .foregroundStyle(Color.stoneLabel)
+                                        .foregroundStyle(Color.stoneMuted)
                                 }
                                 if let summary = event.summary, !summary.isEmpty {
                                     Text(summary)
                                         .font(.subheadline)
-                                        .foregroundStyle(Color.stoneLabel)
+                                        .foregroundStyle(Color.stoneMuted)
                                 }
                             }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .guideCard()
                         }
                     }
                 }
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .pagePink)
         .navigationTitle("Announcements")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }

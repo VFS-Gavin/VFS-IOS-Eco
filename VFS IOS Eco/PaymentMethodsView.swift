@@ -42,20 +42,15 @@ struct PaymentMethodsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Payment Methods")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("Secure, flexible options to manage your education investment. Choose the method that works best for you.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Payment",
+                    accent: "Methods",
+                    accentColor: .pageEmerald,
+                    detail: "Secure, flexible options to manage your education investment. Choose the method that works best for you."
+                )
 
-                Picker("Method", selection: $tab) {
-                    ForEach(Tab.allCases) { item in
-                        Text(item.rawValue).tag(item)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("payment-tabs")
+                GuidePills(options: Array(Tab.allCases), title: { $0.rawValue }, selection: $tab)
+                    .accessibilityIdentifier("payment-tabs")
 
                 switch tab {
                 case .domestic:
@@ -68,7 +63,7 @@ struct PaymentMethodsView: View {
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .pageEmerald)
         .navigationTitle("Payment Methods")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -111,7 +106,7 @@ struct PaymentMethodsView: View {
                 open("Help Center", "https://help.flywire.com")
             }
             card("Wire Transfer") {
-                Text("Direct bank transfer to VFS account").foregroundStyle(Color.stoneLabel)
+                Text("Direct bank transfer to VFS account").foregroundStyle(Color.stoneMuted)
                 labeled("Bank Name", "Bank of Montreal (BMO)")
                 labeled("Bank Address", "595 Burrard Street, Vancouver, BC V7X 1L7, Canada")
                 labeled("Swift Code", PaymentCatalog.swift)
@@ -183,7 +178,7 @@ struct PaymentMethodsView: View {
 
     private var creditCard: some View {
         card("Credit Card") {
-            Text("2 options available").foregroundStyle(Color.stoneLabel)
+            Text("2 options available").foregroundStyle(Color.stoneMuted)
             Text("Option 1").font(.headline)
             Text("Complete and email the CC Pre-Authorization Form to set up automatic payments")
             open("Download Form", PaymentCatalog.preauthForm)
@@ -203,16 +198,13 @@ struct PaymentMethodsView: View {
     private func card(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
                 .foregroundStyle(Color.stoneInk)
             content()
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
     }
 
     private func labeled(_ label: String, _ value: String) -> some View {
@@ -220,7 +212,7 @@ struct PaymentMethodsView: View {
             Text(label.uppercased())
                 .font(.system(size: 10, weight: .bold))
                 .tracking(1.1)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             Text(value)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.stoneInk)

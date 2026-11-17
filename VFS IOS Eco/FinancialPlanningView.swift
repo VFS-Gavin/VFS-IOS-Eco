@@ -53,20 +53,15 @@ struct FinancialPlanningView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Financial Planning")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("A realistic guide to living costs in Vancouver. Plan ahead to enjoy your time at VFS stress-free.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Financial",
+                    accent: "Planning",
+                    accentColor: .pageTeal,
+                    detail: "A realistic guide to living costs in Vancouver. Plan ahead to enjoy your time at VFS stress-free."
+                )
 
-                Picker("Plan", selection: $tab) {
-                    ForEach(Tab.allCases) { item in
-                        Text(item.rawValue).tag(item)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("planning-tabs")
+                GuidePills(options: Array(Tab.allCases), title: { $0.rawValue }, selection: $tab)
+                    .accessibilityIdentifier("planning-tabs")
 
                 switch tab {
                 case .budget:
@@ -94,7 +89,7 @@ struct FinancialPlanningView: View {
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .pageTeal)
         .navigationTitle("Financial Planning")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -104,22 +99,19 @@ struct FinancialPlanningView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Estimated Monthly Living Costs")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 Text(PlanningCatalog.monthlyRange)
                     .font(.system(.title, design: .serif))
                     .foregroundStyle(Color.stoneInk)
                     .accessibilityIdentifier("planning-monthly")
                 Text("This range covers housing, food, transit, and personal expenses.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 Text(PlanningCatalog.tuitionNote)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.stoneInk)
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .guideCard()
 
             ForEach(PlanningCatalog.costs, id: \.name) { cost in
                 card(cost.name) {
@@ -168,7 +160,7 @@ struct FinancialPlanningView: View {
             }
             Text("Looking for a place? Check the VFS Housing Portal.")
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             if let url = WelcomeFormCatalog.downloadURL(path: "/welcome/housing", base: APIConfiguration.baseURL) {
                 Button("VFS Housing Portal") { openURL(url) }
                     .tint(Color.welcomeRed)
@@ -207,16 +199,13 @@ struct FinancialPlanningView: View {
     private func card(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
                 .foregroundStyle(Color.stoneInk)
             content()
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
     }
 
     private func link(_ title: String, _ address: String) -> some View {

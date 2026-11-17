@@ -46,20 +46,15 @@ struct SettingUpAccountsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Setting Up Accounts")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("Get connected. A guide to banking, phone plans, and getting around Vancouver.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Setting Up",
+                    accent: "Accounts",
+                    accentColor: .hubBlue,
+                    detail: "Get connected. A guide to banking, phone plans, and getting around Vancouver."
+                )
 
-                Picker("Account", selection: $tab) {
-                    ForEach(Tab.allCases) { item in
-                        Text(item.rawValue).tag(item)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("accounts-tabs")
+                GuidePills(options: Array(Tab.allCases), title: { $0.rawValue }, selection: $tab)
+                    .accessibilityIdentifier("accounts-tabs")
 
                 switch tab {
                 case .banking:
@@ -72,7 +67,7 @@ struct SettingUpAccountsView: View {
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .hubBlue)
         .navigationTitle("Setup Accounts")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -104,14 +99,14 @@ struct SettingUpAccountsView: View {
                 Text(group.uppercased())
                     .font(.caption.weight(.bold))
                     .tracking(1.1)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 ForEach(AccountsCatalog.carriers.filter { $0.group == group }, id: \.name) { carrier in
                     HStack {
                         link(carrier.name, carrier.url)
                         Spacer()
                         Text(carrier.badge)
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.stoneLabel)
+                            .foregroundStyle(Color.stoneMuted)
                     }
                 }
             }
@@ -137,10 +132,7 @@ struct SettingUpAccountsView: View {
             Text(AccountsCatalog.noUPass)
                 .font(.subheadline)
                 .foregroundStyle(Color.stoneInk)
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
             card("1. Get a Card") {
                 Text("Purchase from a SkyTrain station vending machine (\(AccountsCatalog.cardDeposit)).")
             }
@@ -156,16 +148,13 @@ struct SettingUpAccountsView: View {
     private func card(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
                 .foregroundStyle(Color.stoneInk)
             content()
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
     }
 
     private func link(_ title: String, _ address: String) -> some View {

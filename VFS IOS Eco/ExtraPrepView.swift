@@ -19,7 +19,7 @@ struct ExtraPrepView: View {
                 programming
             default:
                 Text("Program Preparation")
-                    .font(.system(.largeTitle, design: .serif))
+                    .font(.system(size: 36, weight: .black))
             }
         }
     }
@@ -27,13 +27,13 @@ struct ExtraPrepView: View {
     private var animation: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("School of Animation & VFX")
-                .font(.system(.largeTitle, design: .serif))
+                .font(.system(size: 36, weight: .black))
             Text("Orientation guide for 3D Animation & VFX, Classical Animation, and Animation Concept Art")
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             Text("Welcome to Vancouver Film School!")
                 .font(.title3)
             Text("We're so delighted you're joining our community this year.")
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             Text("6 terms. 8 weeks per term. Campus access 24/7.")
             heading("3D Animation & Visual Effects")
             lines(["Autodesk Maya — Free student license", "Autodesk Flow — Free", "Unreal Engine 5 — Free", "Adobe Premiere — Subscription required", "Adobe Photoshop — Subscription required", "Substance Painter — Student license available", "Substance Designer — Student license available", "Nuke — Student license available", "Houdini — Student license available", "ZBrush — Student license available"])
@@ -59,11 +59,11 @@ struct ExtraPrepView: View {
     private var digital: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Digital Design")
-                .font(.system(.largeTitle, design: .serif))
+                .font(.system(size: 36, weight: .black))
             Text("Software tutorials, design resources, and creative tools to prepare for your first day")
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             heading("Adobe Photoshop & Illustrator")
-            Text("Graphic Design Essentials — Start Here").font(.subheadline).foregroundStyle(Color.stoneLabel)
+            Text("Graphic Design Essentials — Start Here").font(.subheadline).foregroundStyle(Color.stoneMuted)
             link("General Adobe Tutorials", "https://www.adobe.com/learn")
             link("The Photoshop Interface", "https://www.youtube.com/watch?v=yqeByrIkrpM")
             link("The Illustrator Interface", "https://www.youtube.com/watch?v=OIatNK6Frf0")
@@ -76,7 +76,7 @@ struct ExtraPrepView: View {
             link("Quick Intro to After Effects (10min)", "https://www.youtube.com/watch?v=hb2bbfiNBXA")
             link("The After Effects Interface", "https://www.youtube.com/watch?v=rBF-KpdBd7s")
             heading("Figma")
-            Text("Industry Standard for Interactive Design & Prototyping — Free!").font(.subheadline).foregroundStyle(Color.stoneLabel)
+            Text("Industry Standard for Interactive Design & Prototyping — Free!").font(.subheadline).foregroundStyle(Color.stoneMuted)
             link("Figma for Beginners (4 parts)", "https://help.figma.com/hc/en-us/sections/4405269443991-Figma-for-beginners-4-parts")
             link("Figma 101 Course", "https://designlab.com/figma-101-course/introduction-to-figma")
             link("13min Figma Crash Course", "https://www.youtube.com/watch?v=jQ1sfKIl50E")
@@ -99,11 +99,11 @@ struct ExtraPrepView: View {
     private var makeup: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Makeup Design for Film & TV")
-                .font(.system(.largeTitle, design: .serif))
+                .font(.system(size: 36, weight: .black))
             Text("Program preparation, camera requirements, and recommended viewing for Makeup Design students")
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             Text("Our VFS Makeup Design department has put together some helpful notes and tips for students leading up to their first day of class.")
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             heading("Before Your First Day")
             lines(["Start Taking Pictures. Get used to your camera settings and start cultivating an eye for how lighting affects your photo.", "Take an Art Class. Even if it's just a one-day workshop — it helps build your creative foundation.", "Get Work Experience. Learn to work in a professional environment, with a team. Skills in communication and working under pressure are vital in this industry.", "Save Money. Try to avoid working while at school if possible to get the most out of the program.", "Talk to Professionals. Seek out and speak with actual industry professionals to research more about the realities of this career.", "Clear Your Plate. Have the least amount of personal distractions during your year at VFS."])
             heading("Mirrorless Cameras")
@@ -114,11 +114,11 @@ struct ExtraPrepView: View {
             lines(MakeupFilms.titles)
             heading("From the department")
             Text("Leave your ego at the door. Let your guard down — be vulnerable! The most successful students are the ones who come to this program completely open and willing to learn everything we have to teach them.")
-            Text("Amy Van Wormer, Instructor").font(.caption).foregroundStyle(Color.stoneLabel)
+            Text("Amy Van Wormer, Instructor").font(.caption).foregroundStyle(Color.stoneMuted)
             Text("Run away from Instagram/Pinterest and start watching some classic movies! Look at books and magazines! Start getting inspiration from sources other than social media.")
-            Text("Rachel Mah, Program Manager").font(.caption).foregroundStyle(Color.stoneLabel)
+            Text("Rachel Mah, Program Manager").font(.caption).foregroundStyle(Color.stoneMuted)
             Text("Treat the whole year like a job interview, not just a school.")
-            Text("Emily Walsh, TA (former VFS Makeup Design student)").font(.caption).foregroundStyle(Color.stoneLabel)
+            Text("Emily Walsh, TA (former VFS Makeup Design student)").font(.caption).foregroundStyle(Color.stoneMuted)
             heading("Reading")
             lines(["Stage Makeup, Richard Corson, James Glavan, Beverly Gore Norcross", "Atlas of Human Anatomy for the Artist, Stephen Rogers Peck", "Human Anatomy for Artists: The Elements of Form, Eliot Goldfinger", "Modelling and Sculpting the Human Figure, Edouard Lanteri", "Color: A Course in Mastering the Art of Mixing Colors, Betty Edwards"])
         }
@@ -127,9 +127,9 @@ struct ExtraPrepView: View {
     private var games: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Game Design")
-                .font(.system(.largeTitle, design: .serif))
+                .font(.system(size: 36, weight: .black))
             Text("Software, hardware, and instructor-curated resource library")
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             heading("Specializations")
             lines(["Level Design. Plan and build interactive environments, mission arcs, and world design using Unreal Engine.", "Game Art. Model, texture, and light game assets using Maya, Substance Painter, ZBrush, and Photoshop.", "Coding. Program gameplay systems, AI, UI, and mechanics using C# in Unity and Blueprints in Unreal."])
             heading("Software")
@@ -146,9 +146,9 @@ struct ExtraPrepView: View {
     private var programming: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Programming for Games, Web & Mobile")
-                .font(.system(.largeTitle, design: .serif))
+                .font(.system(size: 36, weight: .black))
             Text("Prep guide: languages, tools, hardware & external resources")
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             heading("Languages")
             lines(["C#. Unity development, object-oriented programming, data structures", "C++. Unreal Engine, systems programming, memory management, design patterns", "JavaScript. Web apps, AJAX, server-side scripting, MVC frameworks (React, Vue, Angular)", "HTML5 / CSS3. Responsive web design, dynamic interfaces, template-driven apps", "Python. Cloud computing, Django, Google App Engine, game scripting"])
             heading("Tools")
@@ -164,7 +164,7 @@ struct ExtraPrepView: View {
 
     private func heading(_ text: String) -> some View {
         Text(text)
-            .font(.system(.title3, design: .serif))
+            .font(.system(size: 22, weight: .black))
             .padding(.top, 8)
     }
 

@@ -79,19 +79,19 @@ struct CampusTourView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Explore Our World")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("Discover the world-class facilities where VFS students create their future in the heart of downtown Vancouver.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Explore",
+                    accent: "Our World",
+                    accentColor: .welcomeRed,
+                    detail: "Discover the world-class facilities where VFS students create their future in the heart of downtown Vancouver."
+                )
 
                 Text("Locations")
-                    .font(.system(.title2, design: .serif))
+                    .font(.system(size: 28, weight: .black))
                     .foregroundStyle(Color.stoneInk)
                 Text("Select a campus to explore")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
 
                 ForEach(CampusCatalog.campuses) { campus in
                     Button {
@@ -126,60 +126,50 @@ struct CampusTourView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("\(selected.address), \(selected.city)")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     programChips
                     if let url = URL(string: selected.mapLink) {
                         Button("Get Directions") { openURL(url) }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Color.welcomeRed)
+                            .buttonStyle(CrimsonButtonStyle())
                     }
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Need a Printable Map?")
-                        .font(.system(.title3, design: .serif))
+                        .font(.system(size: 22, weight: .black))
                         .foregroundStyle(Color.stoneInk)
                     Text("Download our detailed campus map for easy navigation")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     Text(CampusCatalog.mapNote)
                         .font(.caption)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     if let url = WelcomeFormCatalog.downloadURL(path: CampusCatalog.mapPath, base: APIConfiguration.baseURL) {
                         Button("Download Map") { openURL(url) }
                             .tint(Color.welcomeRed)
                     }
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("See It For Yourself")
-                        .font(.system(.title3, design: .serif))
+                        .font(.system(size: 22, weight: .black))
                         .foregroundStyle(Color.stoneInk)
                     Text("Want a private tour of campus? Reach out to your coordinator and they'll help set one up for you.")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     NavigationLink(value: WelcomeRoute.coordinator) {
                         Text("Contact Your Coordinator")
                             .font(.subheadline.weight(.semibold))
                     }
                     .tint(Color.welcomeRed)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage()
         .navigationTitle("Campus Tour")
         .navigationBarTitleDisplayMode(.inline)
     }
