@@ -7,6 +7,7 @@ nonisolated struct Account: Codable, Equatable {
     var setUpPortfolio: Bool
     var user: AccountUser
     var industry: IndustryFlags?
+    var terms: TermsStatus?
 
     enum CodingKeys: String, CodingKey {
         case home
@@ -15,6 +16,12 @@ nonisolated struct Account: Codable, Equatable {
         case setUpPortfolio = "set_up_portfolio"
         case user
         case industry
+        case terms
+    }
+
+    var needsTerms: Bool {
+        guard user.role != "prospect", let terms else { return false }
+        return terms.needsAcceptance
     }
 
     var creativeSections: [CreativeSection] {
@@ -61,6 +68,45 @@ enum CreativeRoute: Hashable {
     case profile(String)
     case collab(Int)
     case job(Int)
+}
+
+nonisolated struct TermsStatus: Codable, Equatable {
+    var acceptedAt: String?
+    var versionAccepted: Int
+    var currentVersion: Int
+    var dismissCount: Int
+    var hardBlocked: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case acceptedAt = "accepted_at"
+        case versionAccepted = "version_accepted"
+        case currentVersion = "current_version"
+        case dismissCount = "dismiss_count"
+        case hardBlocked = "hard_blocked"
+    }
+
+    var needsAcceptance: Bool {
+        guard let acceptedAt, !acceptedAt.isEmpty else { return true }
+        return versionAccepted < currentVersion
+    }
+
+    var dismissesLeft: Int {
+        max(0, 3 - dismissCount)
+    }
+}
+
+nonisolated struct TermsDismissResult: Codable, Equatable {
+    var loggedOut: Bool
+    var dismissesLeft: Int?
+    var message: String?
+    var account: Account?
+
+    enum CodingKeys: String, CodingKey {
+        case loggedOut = "logged_out"
+        case dismissesLeft = "dismisses_left"
+        case message
+        case account
+    }
 }
 
 nonisolated struct AccountUser: Codable, Equatable {

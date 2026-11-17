@@ -106,6 +106,53 @@ final class AppSession {
         isBusy = false
     }
 
+    func refresh() async {
+        guard phase == .signedIn else { return }
+        guard let account = try? await client.me() else { return }
+        self.account = account
+        cache(account)
+        await loadWelcomeIfNeeded()
+    }
+
+    func acceptTerms() async {
+        isBusy = true
+        statusMessage = nil
+        do {
+            account = try await client.acceptTerms()
+            cache(account)
+        } catch let error as APIError {
+            statusMessage = text(for: error)
+        } catch {
+            statusMessage = "Could not save your acceptance. Please try again."
+        }
+        isBusy = false
+    }
+
+    func dismissTerms() async {
+        isBusy = true
+        statusMessage = nil
+        do {
+            let result = try await client.dismissTerms()
+            if result.loggedOut {
+                signOut()
+                statusMessage = result.message ?? "You have been signed out. Please sign back in and agree to our Terms and Conditions before you can continue."
+                isBusy = false
+                return
+            }
+            if let account = result.account {
+                self.account = account
+                cache(account)
+            } else {
+                await refresh()
+            }
+        } catch let error as APIError {
+            statusMessage = text(for: error)
+        } catch {
+            statusMessage = "Could not dismiss right now. Please try again."
+        }
+        isBusy = false
+    }
+
     func signOut() {
         KeychainStore.clearToken()
         account = nil

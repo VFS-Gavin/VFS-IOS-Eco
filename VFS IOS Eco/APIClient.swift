@@ -50,6 +50,50 @@ nonisolated struct APIClient {
         return try account(from: response)
     }
 
+    func acceptTerms() async throws -> Account {
+        let body = try JSONSerialization.data(withJSONObject: ["scrolled": true, "agreed": true])
+        let response = try await sendData(
+            path: "/api/terms/accept",
+            method: "POST",
+            body: body,
+            contentType: "application/json",
+            authorize: true
+        )
+        if response.status == 404 {
+            throw APIError.message("Terms can't be saved from the app yet.")
+        }
+        return try account(from: response)
+    }
+
+    func dismissTerms() async throws -> TermsDismissResult {
+        let response = try await sendData(
+            path: "/api/terms/dismiss",
+            method: "POST",
+            body: Data("{}".utf8),
+            contentType: "application/json",
+            authorize: true
+        )
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        if response.status == 404 {
+            throw APIError.message("Terms can't be saved from the app yet.")
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(TermsDismissResult.self, from: response.data)
+    }
+
+    func termsDocument() async throws -> TermsDocument {
+        let response = try await send(path: "/api/terms", method: "GET", body: nil, authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(TermsDocument.self, from: response.data)
+    }
+
     func me() async throws -> Account {
         let response = try await send(path: "/api/me", method: "GET", body: nil, authorize: true)
         if response.status == 401 {
