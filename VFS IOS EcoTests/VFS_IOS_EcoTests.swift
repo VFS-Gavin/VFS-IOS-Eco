@@ -64,6 +64,21 @@ final class VFS_IOS_EcoTests: XCTestCase {
         XCTAssertEqual(SchoolInfoCatalog.discounts.first { $0.name == "Waves Coffee House" }?.discount, "10% off")
         XCTAssertEqual(CoordinatorCatalog.people.count, 5)
         XCTAssertEqual(CoordinatorCatalog.people.first?.email, "kihal@vfs.com")
+        XCTAssertEqual(MentalHealthCatalog.crisis.resources.first?.phone, "988")
+        XCTAssertEqual(MentalHealthCatalog.students.resources.first?.name, "Here2Talk")
+        XCTAssertEqual(MentalHealthCatalog.sections.count, 9)
+        XCTAssertEqual(AcceptanceCatalog.programs.filter(\.isReady).count, 10)
+        XCTAssertEqual(AcceptanceCatalog.programs.first { $0.name == "Sound Design" }?.slug, "sound-design")
+        XCTAssertEqual(MakeupFilms.titles.count, 37)
+        XCTAssertTrue(MentalHealthCatalog.disclaimer.contains("VFS is not affiliated"))
+        XCTAssertEqual(
+            WelcomeRoute(card: WelcomeCard(title: "Mental Health Resources", description: "Wellness tools and support", path: "/welcome/mental-health")),
+            .mentalHealth
+        )
+        XCTAssertEqual(
+            WelcomeRoute(card: WelcomeCard(title: "Study Permit Guide", description: "Step-by-step visa application process", path: "/welcome/study-permit")),
+            .studyPermit
+        )
         let url = SchoolInfoCatalog.scheduleURL(
             file: "MKD_Sample Schedule_T1_Sep_2025.pdf",
             base: URL(string: "https://welcome.vfs.com")!
