@@ -150,7 +150,7 @@ struct PortfolioView: View {
 
     @ViewBuilder
     private func cover(_ raw: String?) -> some View {
-        let url = raw.flatMap { URL(string: $0) }
+        let url = PortfolioProject.coverURL(raw)
         Color.stone
             .aspectRatio(4 / 3, contentMode: .fit)
             .overlay {

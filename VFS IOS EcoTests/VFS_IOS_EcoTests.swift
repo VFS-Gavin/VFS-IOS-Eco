@@ -227,5 +227,13 @@ final class VFS_IOS_EcoTests: XCTestCase {
         XCTAssertEqual(feed.projects.data.first?.user.name, "Chris Andersen")
         XCTAssertEqual(feed.projects.data.last?.profile.program, ["acting"])
         XCTAssertNil(feed.projects.data.last?.cover)
+        XCTAssertEqual(
+            PortfolioProject.coverURL("http://10.129.151.17:8005/storage/https://picsum.photos/seed/salvage-grade/800/600")?.absoluteString,
+            "https://picsum.photos/seed/salvage-grade/800/600"
+        )
+        XCTAssertEqual(
+            PortfolioProject.coverURL("https://example.test/cover.jpg")?.absoluteString,
+            "https://example.test/cover.jpg"
+        )
     }
 }

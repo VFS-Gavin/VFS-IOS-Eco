@@ -6,7 +6,14 @@ nonisolated enum APIError: Error, Equatable {
 }
 
 nonisolated struct APIClient {
-    var session: URLSession = .shared
+    private static let transport: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 30
+        configuration.waitsForConnectivity = false
+        return URLSession(configuration: configuration)
+    }()
+
+    var session: URLSession = APIClient.transport
     var baseURL: URL = APIConfiguration.baseURL
     var token: () -> String? = { KeychainStore.readToken() }
 
