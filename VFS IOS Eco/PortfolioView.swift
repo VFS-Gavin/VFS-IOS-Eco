@@ -14,14 +14,28 @@ struct PortfolioScreen: View {
         NavigationStack {
             VStack(spacing: 0) {
                 if sections.count > 1 {
-                    Picker("Section", selection: $section) {
+                    HStack(spacing: 0) {
                         ForEach(sections) { item in
-                            Text(item.rawValue).tag(item)
+                            Button {
+                                section = item
+                            } label: {
+                                Text(item.rawValue)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(section == item ? Color.stoneInk : Color.stoneMuted)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .overlay(alignment: .bottom) {
+                                        Rectangle()
+                                            .fill(section == item ? Color.ecoOrange : Color.clear)
+                                            .frame(height: 2)
+                                    }
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
+                    .padding(.horizontal, 16)
+                    .background(Color.stone)
+                    .overlay(alignment: .bottom) { Rectangle().fill(Color.stoneLine).frame(height: 1) }
                     .accessibilityIdentifier("creative-sections")
                 }
                 switch section {
@@ -102,31 +116,41 @@ struct PortfolioView: View {
             VStack(alignment: .leading, spacing: 16) {
                 CreativeAlerts(session: session)
 
-                Text("Creative ECOsystem")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
+                HStack(spacing: 8) {
+                    Rectangle().fill(Color.ecoOrange).frame(width: 12, height: 3)
+                    Text("PORTFOLIO PLATFORM")
+                        .font(.system(size: 11, weight: .medium))
+                        .tracking(1.6)
+                        .foregroundStyle(Color.stoneMuted)
+                }
+                CreativeHeadline(
+                    lead: "Portfolio ",
+                    accent: "Platform",
+                    accentColor: .ecoOrange,
+                    detail: "Work from across VFS, students and alumni alike."
+                )
 
-                TextField("Search projects or people", text: $search)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.search)
-                    .padding()
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .accessibilityIdentifier("portfolio-search")
-                    .onSubmit { Task { await reload() } }
+                CreativeSearchField(placeholder: "Search projects or creators…", text: $search, identifier: "portfolio-search") {
+                    Task { await reload() }
+                }
 
                 if showProfessionalToggle {
                     Button {
                         professional.toggle()
                         Task { await reload() }
                     } label: {
-                        Text(professional ? "Professional Portfolio on" : "Professional Portfolio")
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
+                        HStack(spacing: 8) {
+                            Image(systemName: professional ? "checkmark.square.fill" : "square")
+                            Text("Professional Portfolio")
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(professional ? Color.ecoOrange : Color.stoneMuted)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(professional ? Color.ecoOrange.opacity(0.08) : Color.white)
+                        .overlay(Rectangle().stroke(professional ? Color.ecoOrange : Color.stoneLine, lineWidth: 1))
                     }
-                    .buttonStyle(.bordered)
-                    .tint(Color.ecoOrange)
+                    .buttonStyle(.plain)
                     .accessibilityIdentifier("portfolio-professional")
                 }
 
@@ -174,44 +198,49 @@ struct PortfolioView: View {
     }
 
     private func card(_ project: PortfolioProject) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             cover(project.cover)
-            Text(project.title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.stoneInk)
-                .lineLimit(2)
-            if let name = project.user.name, !name.isEmpty {
-                Text(name)
-                    .font(.caption)
-                    .foregroundStyle(Color.stoneLabel)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(project.title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.stoneInk)
+                    .lineLimit(1)
+                if let name = project.user.name, !name.isEmpty {
+                    Text(name)
+                        .font(.caption)
+                        .foregroundStyle(Color.stoneMuted)
+                        .lineLimit(1)
+                }
+                if !project.profile.programLabel.isEmpty {
+                    Text(project.profile.programLabel)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Color.ecoOrange)
+                        .lineLimit(1)
+                }
             }
-            if !project.profile.programLabel.isEmpty {
-                Text(project.profile.programLabel)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color.ecoOrange)
-            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
         }
-        .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
     }
 
     @ViewBuilder
     private func cover(_ raw: String?) -> some View {
         let url = PortfolioProject.coverURL(raw)
-        Color.stone
+        Color(red: 231 / 255, green: 229 / 255, blue: 228 / 255)
             .aspectRatio(4 / 3, contentMode: .fit)
             .overlay {
                 if let url {
                     AsyncImage(url: url) { image in
                         image.resizable().scaledToFill()
                     } placeholder: {
-                        Color.stone
+                        Color(red: 231 / 255, green: 229 / 255, blue: 228 / 255)
                     }
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipped()
     }
 
     private func reload() async {

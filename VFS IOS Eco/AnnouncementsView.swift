@@ -84,6 +84,8 @@ struct AnnouncementCards: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.white)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(alignment: .leading) { Rectangle().fill(tint).frame(width: 3) }
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.stoneLine, lineWidth: 1))
             }
         }
     }
