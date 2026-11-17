@@ -1,0 +1,2 @@
+API_BASE_URL = https:/$()/welcome.vfs.com
+IPHONEOS_DEPLOYMENT_TARGET = 18.0
