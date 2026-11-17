@@ -40,16 +40,25 @@ struct PortfolioView: View {
     }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if industryLine {
+                Text("Portfolio, collabs, and jobs")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.stoneLabel)
+                    .accessibilityIdentifier("industry-creative-line")
+            }
+            projectList
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.stone)
+    }
+
+    private var projectList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Creative ECOsystem")
                     .font(.system(.largeTitle, design: .serif))
                     .foregroundStyle(Color.stoneInk)
-                if industryLine {
-                    Text("Portfolio, collabs, and jobs")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
-                }
 
                 TextField("Search projects or people", text: $search)
                     .textInputAutocapitalization(.never)
