@@ -183,6 +183,25 @@ struct WelcomeHubView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
+                    WelcomeAlerts(session: session)
+
+                    NavigationLink(value: WelcomeRoute.announcements) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Student Announcements")
+                                .font(.system(.headline, design: .serif))
+                                .foregroundStyle(Color.stoneInk)
+                            Text("VFS achievements, events and webinars")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.stoneLabel)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("welcome-announcements")
+
                     if session.welcome?.setUpPortfolio == true || session.account?.setUpPortfolio == true {
                         Text("Set Up Your Portfolio")
                             .font(.system(.title3, design: .serif))
@@ -253,6 +272,8 @@ struct WelcomeHubView: View {
                     SettingUpAccountsView()
                 case .financialPlanning:
                     FinancialPlanningView()
+                case .announcements:
+                    StudentAnnouncementsView(session: session)
                 case .programPrep(let slug):
                     ProgramPrepView(slug: slug)
                 case .summary(let title, let description):
