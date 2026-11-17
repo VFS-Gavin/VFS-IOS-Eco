@@ -163,6 +163,8 @@ struct WelcomeHubView: View {
                     ODayView(session: session)
                 case .coordinator:
                     CoordinatorView()
+                case .forms:
+                    WelcomeFormsView(session: session)
                 case .summary(let title, let description):
                     PageSummaryView(title: title, description: description)
                 }

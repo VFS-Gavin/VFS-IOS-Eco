@@ -58,6 +58,30 @@ nonisolated struct APIClient {
         return try JSONDecoder().decode(ODayFeed.self, from: response.data)
     }
 
+    func survey() async throws -> SurveyForm {
+        let response = try await send(path: "/api/welcome/survey", method: "GET", body: nil, authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(SurveyForm.self, from: response.data)
+    }
+
+    func submitJSON(path: String, body: [String: Any]) async throws -> String {
+        let data = try JSONSerialization.data(withJSONObject: body)
+        return try await submit(path: path, body: data, contentType: "application/json")
+    }
+
+    func submitMultipart(path: String, fields: [String: String], files: [FormAttachment]) async throws -> String {
+        let boundary = "vfs-\(UUID().uuidString)"
+        return try await submit(
+            path: path,
+            body: multipart(fields: fields, files: files, boundary: boundary),
+            contentType: "multipart/form-data; boundary=\(boundary)"
+        )
+    }
+
     func welcome() async throws -> WelcomeHome {
         let response = try await send(path: "/api/welcome", method: "GET", body: nil, authorize: true)
         if response.status == 401 {
@@ -92,6 +116,59 @@ nonisolated struct APIClient {
         let (data, response) = try await session.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         return RawResponse(status: status, data: data)
+    }
+
+    private func submit(path: String, body: Data, contentType: String) async throws -> String {
+        let response = try await sendData(path: path, method: "POST", body: body, contentType: contentType, authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        guard let message = message(in: response.data), !message.isEmpty else {
+            throw APIError.message("Something went wrong.")
+        }
+        return message
+    }
+
+    private func sendData(path: String, method: String, body: Data?, contentType: String?, authorize: Bool) async throws -> RawResponse {
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
+        components?.path = path
+        guard let url = components?.url else {
+            throw APIError.message("The app is missing its server address.")
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let contentType {
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        }
+        request.httpBody = body
+        if authorize, let token = token() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await session.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        return RawResponse(status: status, data: data)
+    }
+
+    private func multipart(fields: [String: String], files: [FormAttachment], boundary: String) -> Data {
+        var data = Data()
+        for (key, value) in fields {
+            data.append(Data("--\(boundary)\r\n".utf8))
+            data.append(Data("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".utf8))
+            data.append(Data(value.utf8))
+            data.append(Data("\r\n".utf8))
+        }
+        for file in files {
+            data.append(Data("--\(boundary)\r\n".utf8))
+            data.append(Data("Content-Disposition: form-data; name=\"supporting_documents[]\"; filename=\"\(file.filename)\"\r\n".utf8))
+            data.append(Data("Content-Type: \(file.mimeType)\r\n\r\n".utf8))
+            data.append(file.data)
+            data.append(Data("\r\n".utf8))
+        }
+        data.append(Data("--\(boundary)--\r\n".utf8))
+        return data
     }
 
     private func throwIfNeeded(_ response: RawResponse, allowSuccess: Bool) throws {
