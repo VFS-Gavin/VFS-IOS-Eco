@@ -238,6 +238,8 @@ struct WelcomeHubView: View {
                     MentalHealthView()
                 case .studentStories:
                     StudentStoriesView()
+                case .instructors:
+                    InstructorsView(session: session)
                 case .programPrep(let slug):
                     ProgramPrepView(slug: slug)
                 case .summary(let title, let description):

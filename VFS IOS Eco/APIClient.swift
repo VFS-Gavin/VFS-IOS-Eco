@@ -87,6 +87,16 @@ nonisolated struct APIClient {
         )
     }
 
+    func instructors() async throws -> InstructorDirectory {
+        let response = try await send(path: "/api/welcome/instructors", method: "GET", body: nil, authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(InstructorDirectory.self, from: response.data)
+    }
+
     func welcome() async throws -> WelcomeHome {
         let response = try await send(path: "/api/welcome", method: "GET", body: nil, authorize: true)
         if response.status == 401 {
