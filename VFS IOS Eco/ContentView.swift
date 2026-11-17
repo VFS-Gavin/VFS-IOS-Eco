@@ -54,6 +54,7 @@ struct RootScreen: View {
 
 struct SignInView: View {
     @Bindable var session: AppSession
+    @State private var pastedLink = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -67,6 +68,29 @@ struct SignInView: View {
                 Text(session.email)
                     .font(.subheadline)
                     .foregroundStyle(Color.stoneLabel)
+                #if DEBUG
+                TextField("Paste the sign-in link", text: $pastedLink)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .padding()
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .accessibilityIdentifier("paste-sign-in-link")
+                Button("Continue") {
+                    let trimmed = pastedLink.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard let url = URL(string: trimmed) else { return }
+                    Task { await session.open(url: url) }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.welcomeRed)
+                .disabled(session.isBusy || URL(string: pastedLink.trimmingCharacters(in: .whitespacesAndNewlines)) == nil)
+                .accessibilityIdentifier("continue-sign-in-link")
+                #endif
+                if let statusMessage = session.statusMessage {
+                    Text(statusMessage)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.stoneInk)
+                }
             } else {
                 TextField("Email", text: $session.email)
                     .textContentType(.emailAddress)
