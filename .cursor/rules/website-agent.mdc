@@ -1,0 +1,20 @@
+---
+description: Ask Gavin for website changes instead of editing the website repo
+alwaysApply: true
+---
+
+# Website changes go through Gavin
+
+The iOS app and the website have to talk. This agent owns the iOS repo. The website agent owns `c:\Users\getmanski\Desktop\vfs-cursor\vfs-portals`.
+
+When the app needs something built, implemented, added, or adjusted on the website (API, auth, roles, copy, flags, mail, data), do not edit that repo. Write Gavin a prompt he can paste to the website agent, or build himself. Stop there and wait.
+
+When you need an answer from the website agent, ask Gavin the question. He will bring the answer back. Do not guess website behavior to unblock yourself.
+
+A website prompt includes:
+
+- What to change, and why the app needs it.
+- The request and response the app will send, with role and error cases.
+- What to leave alone: do not merge `vfs-portals` to `master`, do not deploy, do not put PHP in the iOS repo.
+
+iOS work continues here. Website work waits on Gavin's prompt or his answer.
