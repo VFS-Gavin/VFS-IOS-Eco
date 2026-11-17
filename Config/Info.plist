@@ -4,5 +4,16 @@
 <dict>
 	<key>APIBaseURL</key>
 	<string>$(API_BASE_URL)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>VFS01.VFS-IOS-Eco</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>vfseco</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

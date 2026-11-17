@@ -4,6 +4,7 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var session: AppSession?
+    @State private var pendingLink: URL?
 
     var body: some View {
         Group {
@@ -13,13 +14,24 @@ struct ContentView: View {
                 Color.stone.ignoresSafeArea()
             }
         }
+        .onOpenURL { url in
+            pendingLink = url
+            openPendingLink()
+        }
         .task {
             if session == nil {
                 let created = AppSession(context: modelContext)
                 session = created
                 await created.restore()
+                openPendingLink()
             }
         }
+    }
+
+    private func openPendingLink() {
+        guard let session, let url = pendingLink else { return }
+        pendingLink = nil
+        Task { await session.open(url: url) }
     }
 }
 
@@ -34,9 +46,6 @@ struct RootScreen: View {
             case .signedIn:
                 signedIn
             }
-        }
-        .onOpenURL { url in
-            Task { await session.open(url: url) }
         }
     }
 

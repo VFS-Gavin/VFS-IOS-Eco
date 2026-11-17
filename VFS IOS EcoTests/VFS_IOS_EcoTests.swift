@@ -126,6 +126,8 @@ final class VFS_IOS_EcoTests: XCTestCase {
     func testSignInLinkReadsTheTokenFromTheUniversalLink() {
         let url = URL(string: "https://welcome.vfs.com/auth/app/magic-link/abcdefghijklmnopqrstuvwxyz012345")!
         XCTAssertEqual(SignInLink.token(from: url), "abcdefghijklmnopqrstuvwxyz012345")
+        let appLink = URL(string: "vfseco://auth/app/magic-link/abcdefghijklmnopqrstuvwxyz012345")!
+        XCTAssertEqual(SignInLink.token(from: appLink), "abcdefghijklmnopqrstuvwxyz012345")
         XCTAssertNil(SignInLink.token(from: URL(string: "https://welcome.vfs.com/welcome")!))
     }
 }
