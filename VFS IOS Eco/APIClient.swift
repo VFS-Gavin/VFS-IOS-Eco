@@ -130,8 +130,44 @@ nonisolated struct APIClient {
         try await authorized(CreativeAnnouncements.self, path: "/api/creative/announcements")
     }
 
-    private func authorized<T: Decodable>(_ type: T.Type, path: String) async throws -> T {
-        let response = try await send(path: path, method: "GET", body: nil, authorize: true)
+    func project(id: Int) async throws -> ProjectDetail {
+        try await authorized(ProjectDetailResponse.self, path: "/api/creative/projects/\(id)").project
+    }
+
+    func profile(slug: String) async throws -> CreativeProfileDetail {
+        let safe = slug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? slug
+        return try await authorized(ProfileResponse.self, path: "/api/creative/profiles/\(safe)").profile
+    }
+
+    func collabs(search: String, page: Int) async throws -> CollabBoard {
+        try await authorized(CollabBoard.self, path: "/api/creative/collabs", query: pageQuery(search: search, page: page))
+    }
+
+    func collab(id: Int) async throws -> CollabCard {
+        try await authorized(CollabDetailResponse.self, path: "/api/creative/collabs/\(id)").collab
+    }
+
+    func jobs(search: String, page: Int, partnerPage: Int) async throws -> JobsBoard {
+        var query = pageQuery(search: search, page: page)
+        query.append(URLQueryItem(name: "partner_page", value: String(partnerPage)))
+        return try await authorized(JobsBoard.self, path: "/api/creative/jobs", query: query)
+    }
+
+    func job(id: Int) async throws -> JobCard {
+        try await authorized(JobDetailResponse.self, path: "/api/creative/jobs/\(id)").job
+    }
+
+    private func pageQuery(search: String, page: Int) -> [URLQueryItem] {
+        var query = [URLQueryItem(name: "page", value: String(page))]
+        let trimmed = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            query.append(URLQueryItem(name: "search", value: trimmed))
+        }
+        return query
+    }
+
+    private func authorized<T: Decodable>(_ type: T.Type, path: String, query: [URLQueryItem] = []) async throws -> T {
+        let response = try await send(path: path, method: "GET", body: nil, authorize: true, query: query)
         if response.status == 401 {
             KeychainStore.clearToken()
             throw APIError.unauthorized
@@ -251,7 +287,7 @@ nonisolated struct APIClient {
     }
 
     private func message(in data: Data) -> String? {
-        jsonString(data, key: "message")
+        jsonString(data, key: "message") ?? jsonString(data, key: "error")
     }
 
     private func jsonString(_ data: Data, key: String) -> String? {

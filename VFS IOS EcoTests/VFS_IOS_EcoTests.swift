@@ -258,4 +258,61 @@ final class VFS_IOS_EcoTests: XCTestCase {
             "https://example.test/cover.jpg"
         )
     }
+
+    func testCreativeContentDecodesTheMobileJSON() throws {
+        let project = """
+        {"project":{"id":1,"title":"Night Drive","slug":"night-drive","category":"film_production","description":"A night shoot.","cover_url":null,"media":[],"tools":[],"owner_name":"Ada Lovelace","profile_slug":"ada","program_label":"Film Production","likes_count":0,"liked":false}}
+        """.data(using: .utf8)!
+        let detail = try JSONDecoder().decode(ProjectDetailResponse.self, from: project).project
+        XCTAssertEqual(detail.title, "Night Drive")
+        XCTAssertEqual(detail.ownerName, "Ada Lovelace")
+        XCTAssertEqual(detail.profileSlug, "ada")
+        XCTAssertFalse(detail.liked)
+        XCTAssertTrue(detail.media.isEmpty)
+
+        let profile = """
+        {"profile":{"name":"Ada Lovelace","headline":"Editor","program_label":"Film Production","location":"Vancouver, BC","skills":["Editing"],"open_to_work":true,"open_to_collab":false,"projects":[{"id":1,"title":"Night Drive","slug":"night-drive","category":"film_production","cover_url":null,"likes_count":0}]}}
+        """.data(using: .utf8)!
+        let person = try JSONDecoder().decode(ProfileResponse.self, from: profile).profile
+        XCTAssertEqual(person.projects.first?.title, "Night Drive")
+        XCTAssertTrue(person.openToWork)
+        XCTAssertFalse(person.openToCollab)
+
+        let empty = """
+        {"industry_view":false,"filters":{"search":"zzzz-no-such-collab","type":"","role":"","paid_only":false,"role_type":"","board":"active"},"collabs":{"current_page":1,"data":[],"last_page":1,"total":0}}
+        """.data(using: .utf8)!
+        let board = try JSONDecoder().decode(CollabBoard.self, from: empty)
+        XCTAssertTrue(board.collabs.data.isEmpty)
+        XCTAssertFalse(board.collabs.hasMore)
+
+        let collab = """
+        {"collab":{"id":1,"title":"Night Shoot","status":"open","type":"Short film","role":"Editor","deadline":"2026-12-01","cover_url":null,"owner_name":"Ada Lovelace","description":"A night shoot.","location":"Vancouver","remote":true,"paid":false}}
+        """.data(using: .utf8)!
+        let post = try JSONDecoder().decode(CollabDetailResponse.self, from: collab).collab
+        XCTAssertEqual(post.role, "Editor")
+        XCTAssertEqual(post.deadline, "2026-12-01")
+        XCTAssertEqual(post.remote, true)
+        XCTAssertEqual(post.paid, false)
+
+        let job = """
+        {"job":{"id":1,"title":"Harbour Compositor","company":"Industrial Light & Magic","location":"Vancouver, BC","type":"full_time","level":"mid","remote":false,"posted_at":"2026-11-01","application_url":"https://ilm.example/jobs/1"}}
+        """.data(using: .utf8)!
+        let listing = try JSONDecoder().decode(JobDetailResponse.self, from: job).job
+        XCTAssertEqual(listing.company, "Industrial Light & Magic")
+        XCTAssertEqual(listing.applicationURL, "https://ilm.example/jobs/1")
+        XCTAssertFalse(listing.remote)
+
+        let jobs = """
+        {"jobs":{"current_page":1,"data":[],"last_page":1,"total":0},"partner_jobs":{"current_page":1,"data":[],"last_page":1,"total":0},"productions":[{"id":3,"title":"Harbour","region":"Vancouver","category":null,"production_company":null,"producer":null,"director":null,"schedule":null,"start_date":null,"end_date":null,"production_address":null,"production_manager":null,"production_coordinator":null,"location_manager":null,"bg_casting":null,"casting_director":null,"stunt_coordinator":null,"email":null,"phone":null,"source_url":null}]}
+        """.data(using: .utf8)!
+        let jobsBoard = try JSONDecoder().decode(JobsBoard.self, from: jobs)
+        XCTAssertEqual(jobsBoard.productions.first?.title, "Harbour")
+        XCTAssertTrue(jobsBoard.jobs.data.isEmpty)
+
+        let account = """
+        {"home":"creative","welcome_hub":false,"creative":"reduced","set_up_portfolio":false,"user":{"id":8,"name":"Industry","email":"ios-industry@vfs.edu","role":"industry"},"industry":{"pending":false,"can_see_portfolio":true,"can_see_collabs":false,"can_see_jobs":true}}
+        """.data(using: .utf8)!
+        let reduced = try JSONDecoder().decode(Account.self, from: account)
+        XCTAssertEqual(reduced.creativeSections, [.portfolio, .jobs])
+    }
 }

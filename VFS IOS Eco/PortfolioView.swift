@@ -4,15 +4,59 @@ struct PortfolioScreen: View {
     @Bindable var session: AppSession
     var navigationTitle: String
     var industryLine: Bool
+    @State private var section: CreativeSection = .portfolio
+
+    private var sections: [CreativeSection] {
+        session.account?.creativeSections ?? [.portfolio]
+    }
 
     var body: some View {
         NavigationStack {
-            PortfolioView(session: session, industryLine: industryLine)
-                .navigationTitle(navigationTitle)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    Button("Sign out") { session.signOut() }
+            VStack(spacing: 0) {
+                if sections.count > 1 {
+                    Picker("Section", selection: $section) {
+                        ForEach(sections) { item in
+                            Text(item.rawValue).tag(item)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .accessibilityIdentifier("creative-sections")
                 }
+                switch section {
+                case .portfolio:
+                    PortfolioView(session: session, industryLine: industryLine)
+                case .collabs:
+                    CollabsView(session: session)
+                case .jobs:
+                    JobsView(session: session)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(Color.stone)
+            .navigationTitle(navigationTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: CreativeRoute.self) { route in
+                switch route {
+                case .project(let id):
+                    ProjectDetailView(session: session, id: id)
+                case .profile(let slug):
+                    ProfileDetailView(session: session, slug: slug)
+                case .collab(let id):
+                    CollabDetailView(session: session, id: id)
+                case .job(let id):
+                    JobDetailView(session: session, id: id)
+                }
+            }
+            .toolbar {
+                Button("Sign out") { session.signOut() }
+            }
+            .onAppear {
+                if !sections.contains(section), let first = sections.first {
+                    section = first
+                }
+            }
         }
     }
 }
@@ -105,7 +149,10 @@ struct PortfolioView: View {
                     } else {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                             ForEach(projects) { project in
-                                card(project)
+                                NavigationLink(value: CreativeRoute.project(project.id)) {
+                                    card(project)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                         if feed?.projects.hasMore == true {

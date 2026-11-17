@@ -6,6 +6,7 @@ nonisolated struct Account: Codable, Equatable {
     var creative: String
     var setUpPortfolio: Bool
     var user: AccountUser
+    var industry: IndustryFlags?
 
     enum CodingKeys: String, CodingKey {
         case home
@@ -13,7 +14,53 @@ nonisolated struct Account: Codable, Equatable {
         case creative
         case setUpPortfolio = "set_up_portfolio"
         case user
+        case industry
     }
+
+    var creativeSections: [CreativeSection] {
+        guard creative != "none" else { return [] }
+        let reduced = creative == "reduced"
+        var sections: [CreativeSection] = []
+        if !reduced || industry?.canSeePortfolio != false {
+            sections.append(.portfolio)
+        }
+        if !reduced || industry?.canSeeCollabs == true {
+            sections.append(.collabs)
+        }
+        if !reduced || industry?.canSeeJobs == true {
+            sections.append(.jobs)
+        }
+        return sections
+    }
+}
+
+nonisolated struct IndustryFlags: Codable, Equatable {
+    var pending: Bool
+    var canSeePortfolio: Bool
+    var canSeeCollabs: Bool
+    var canSeeJobs: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case pending
+        case canSeePortfolio = "can_see_portfolio"
+        case canSeeCollabs = "can_see_collabs"
+        case canSeeJobs = "can_see_jobs"
+    }
+}
+
+enum CreativeSection: String, CaseIterable, Identifiable {
+    case portfolio = "Portfolio"
+    case collabs = "Collabs"
+    case jobs = "Jobs"
+
+    var id: String { rawValue }
+}
+
+enum CreativeRoute: Hashable {
+    case project(Int)
+    case profile(String)
+    case collab(Int)
+    case job(Int)
 }
 
 nonisolated struct AccountUser: Codable, Equatable {
