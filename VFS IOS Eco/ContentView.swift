@@ -242,6 +242,12 @@ struct WelcomeHubView: View {
                     InstructorsView(session: session)
                 case .paymentMethods:
                     PaymentMethodsView()
+                case .campusTour:
+                    CampusTourView()
+                case .settingUpAccounts:
+                    SettingUpAccountsView()
+                case .financialPlanning:
+                    FinancialPlanningView()
                 case .programPrep(let slug):
                     ProgramPrepView(slug: slug)
                 case .summary(let title, let description):
