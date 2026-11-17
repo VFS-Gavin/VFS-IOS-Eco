@@ -228,6 +228,18 @@ struct WelcomeHubView: View {
                     CoordinatorView()
                 case .forms:
                     WelcomeFormsView(session: session)
+                case .acceptance:
+                    AcceptanceView()
+                case .studyPermit:
+                    StudyPermitView()
+                case .insurance:
+                    InsuranceView()
+                case .mentalHealth:
+                    MentalHealthView()
+                case .studentStories:
+                    StudentStoriesView()
+                case .programPrep(let slug):
+                    ProgramPrepView(slug: slug)
                 case .summary(let title, let description):
                     PageSummaryView(title: title, description: description)
                 }
