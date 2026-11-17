@@ -129,12 +129,42 @@ struct SignInView: View {
                         .foregroundStyle(Color.stoneInk)
                 }
             }
+            #if DEBUG
+            devSignIn
+            #endif
             Spacer()
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.stone.ignoresSafeArea())
     }
+
+    #if DEBUG
+    private var devSignIn: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Dev sign-in")
+                .font(.subheadline)
+                .foregroundStyle(Color.stoneLabel)
+            ForEach(
+                [
+                    ("Pending", "pending"),
+                    ("Student", "student"),
+                    ("Alumni", "alumni"),
+                    ("Industry", "industry"),
+                ],
+                id: \.1
+            ) { title, role in
+                Button(title) {
+                    Task { await session.devSignIn(role: role) }
+                }
+                .buttonStyle(.bordered)
+                .tint(Color.welcomeRed)
+                .disabled(session.isBusy)
+                .accessibilityIdentifier("dev-sign-in-\(role)")
+            }
+        }
+    }
+    #endif
 }
 
 struct WelcomeHubView: View {
