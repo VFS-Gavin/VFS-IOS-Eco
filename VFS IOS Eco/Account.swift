@@ -61,6 +61,9 @@ nonisolated enum WelcomeRoute: Hashable {
     case studentStories
     case instructors
     case paymentMethods
+    case campusTour
+    case settingUpAccounts
+    case financialPlanning
     case programPrep(String)
     case summary(title: String, description: String)
 
@@ -88,6 +91,12 @@ nonisolated enum WelcomeRoute: Hashable {
             self = .instructors
         case "/welcome/payment-methods":
             self = .paymentMethods
+        case "/welcome/campus-tour":
+            self = .campusTour
+        case "/welcome/setting-up-accounts":
+            self = .settingUpAccounts
+        case "/welcome/financial-planning":
+            self = .financialPlanning
         default:
             self = .summary(title: card.title, description: card.description)
         }

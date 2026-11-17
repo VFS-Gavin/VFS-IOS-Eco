@@ -92,6 +92,34 @@ final class VFS_IOS_EcoTests: XCTestCase {
         XCTAssertEqual(PaymentCatalog.swift, "BOFMCAM2")
         XCTAssertEqual(PaymentCatalog.accountNumber, "1823-417")
         XCTAssertTrue(PaymentCatalog.cardFee.contains("3.5%"))
+        XCTAssertEqual(
+            WelcomeRoute(card: WelcomeCard(title: "Campus Tour", description: "Find your way around VFS", path: "/welcome/campus-tour")),
+            .campusTour
+        )
+        XCTAssertEqual(CampusCatalog.campuses.count, 4)
+        XCTAssertEqual(CampusCatalog.campuses.first?.name, "198 West Hastings")
+        XCTAssertEqual(CampusCatalog.campuses.first?.mapLink, "https://maps.app.goo.gl/c57Q5kETbgk1Uguv6")
+        XCTAssertEqual(CampusCatalog.campuses.first { $0.id == 3 }?.programs.count, 8)
+        XCTAssertTrue(CampusCatalog.mapNote.contains("five VFS locations"))
+        XCTAssertEqual(
+            WelcomeRoute(card: WelcomeCard(title: "Setup Accounts", description: "Banking, phone, and transit", path: "/welcome/setting-up-accounts")),
+            .settingUpAccounts
+        )
+        XCTAssertEqual(AccountsCatalog.banks.count, 5)
+        XCTAssertEqual(AccountsCatalog.banks.first?.url, "https://www.td.com/ca/en/personal-banking")
+        XCTAssertTrue(AccountsCatalog.noUPass.contains("NOT part of the UPass"))
+        XCTAssertEqual(AccountsCatalog.cardDeposit, "$6 deposit")
+        XCTAssertEqual(AccountsCatalog.studentPlan, "$35 - $55 CAD / month")
+        XCTAssertEqual(
+            WelcomeRoute(card: WelcomeCard(title: "Financial Planning", description: "Budget for life in Vancouver", path: "/welcome/financial-planning")),
+            .financialPlanning
+        )
+        XCTAssertEqual(PlanningCatalog.monthlyRange, "$1,500 - $2,500 CAD")
+        XCTAssertEqual(PlanningCatalog.tuitionNote, "Tuition is not included.")
+        XCTAssertEqual(PlanningCatalog.costs.first?.range, "$800 - $1,500")
+        XCTAssertEqual(PlanningCatalog.homes.first { $0.name == "Studio Apt" }?.price, "$1,800+")
+        XCTAssertTrue(PlanningCatalog.saves.contains { $0.detail.contains("$800+") })
+        XCTAssertEqual(PlanningCatalog.eats.first { $0.name == "Costco Food Court" }?.place, "605 Expo Blvd")
         let url = SchoolInfoCatalog.scheduleURL(
             file: "MKD_Sample Schedule_T1_Sep_2025.pdf",
             base: URL(string: "https://welcome.vfs.com")!
