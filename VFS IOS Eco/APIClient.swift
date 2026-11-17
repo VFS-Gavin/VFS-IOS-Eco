@@ -27,15 +27,20 @@ nonisolated struct APIClient {
             body: ["token": token],
             authorize: false
         )
-        if response.status == 401 || response.status == 403 {
-            throw APIError.message(message(in: response.data) ?? "Sign in on the website.")
+        return try account(from: response)
+    }
+
+    func devSignIn(role: String) async throws -> Account {
+        let response = try await send(
+            path: "/api/auth/dev-login",
+            method: "POST",
+            body: ["role": role],
+            authorize: false
+        )
+        if response.status == 404 {
+            throw APIError.message("Dev sign-in is not available.")
         }
-        try throwIfNeeded(response, allowSuccess: true)
-        let account = try JSONDecoder().decode(Account.self, from: response.data)
-        if let token = jsonString(response.data, key: "token") {
-            KeychainStore.saveToken(token)
-        }
-        return account
+        return try account(from: response)
     }
 
     func me() async throws -> Account {
@@ -169,6 +174,18 @@ nonisolated struct APIClient {
         }
         data.append(Data("--\(boundary)--\r\n".utf8))
         return data
+    }
+
+    private func account(from response: RawResponse) throws -> Account {
+        if response.status == 401 || response.status == 403 {
+            throw APIError.message(message(in: response.data) ?? "Sign in on the website.")
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        let account = try JSONDecoder().decode(Account.self, from: response.data)
+        if let token = jsonString(response.data, key: "token") {
+            KeychainStore.saveToken(token)
+        }
+        return account
     }
 
     private func throwIfNeeded(_ response: RawResponse, allowSuccess: Bool) throws {

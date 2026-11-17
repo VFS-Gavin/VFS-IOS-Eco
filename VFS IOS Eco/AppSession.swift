@@ -88,6 +88,24 @@ final class AppSession {
         isBusy = false
     }
 
+    func devSignIn(role: String) async {
+        isBusy = true
+        statusMessage = nil
+        do {
+            account = try await client.devSignIn(role: role)
+            cache(account)
+            phase = .signedIn
+            await loadWelcomeIfNeeded()
+        } catch let error as APIError {
+            KeychainStore.clearToken()
+            phase = .signedOut
+            statusMessage = text(for: error)
+        } catch {
+            statusMessage = "Dev sign-in is not available."
+        }
+        isBusy = false
+    }
+
     func signOut() {
         KeychainStore.clearToken()
         account = nil
