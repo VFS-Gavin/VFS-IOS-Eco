@@ -131,17 +131,22 @@ struct WelcomeHubView: View {
                                 .tracking(1.4)
                                 .foregroundStyle(Color.stoneLabel)
                             ForEach(group.cards) { card in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(card.title)
-                                        .font(.system(.headline, design: .serif))
-                                    Text(card.description)
-                                        .font(.subheadline)
-                                        .foregroundStyle(Color.stoneLabel)
+                                NavigationLink(value: WelcomeRoute(card: card)) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(card.title)
+                                            .font(.system(.headline, design: .serif))
+                                            .foregroundStyle(Color.stoneInk)
+                                        Text(card.description)
+                                            .font(.subheadline)
+                                            .foregroundStyle(Color.stoneLabel)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding()
+                                    .background(Color.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(Color.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier(card.path)
                             }
                         }
                     }
@@ -150,11 +155,45 @@ struct WelcomeHubView: View {
             }
             .background(Color.stone)
             .navigationTitle("Welcome Hub")
+            .navigationDestination(for: WelcomeRoute.self) { route in
+                switch route {
+                case .schoolInfo:
+                    SchoolInfoView()
+                case .oDay:
+                    ODayView(session: session)
+                case .coordinator:
+                    CoordinatorView()
+                case .summary(let title, let description):
+                    PageSummaryView(title: title, description: description)
+                }
+            }
             .toolbar {
                 Button("Sign out") { session.signOut() }
             }
         }
         .tint(accent)
+    }
+}
+
+struct PageSummaryView: View {
+    let title: String
+    let description: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.system(.largeTitle, design: .serif))
+                .foregroundStyle(Color.stoneInk)
+            Text(description)
+                .font(.body)
+                .foregroundStyle(Color.stoneLabel)
+            Spacer()
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.stone)
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

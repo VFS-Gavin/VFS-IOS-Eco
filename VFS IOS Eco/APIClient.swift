@@ -48,6 +48,16 @@ nonisolated struct APIClient {
         return try JSONDecoder().decode(Account.self, from: response.data)
     }
 
+    func oday() async throws -> ODayFeed {
+        let response = try await send(path: "/api/welcome/o-day", method: "GET", body: nil, authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(ODayFeed.self, from: response.data)
+    }
+
     func welcome() async throws -> WelcomeHome {
         let response = try await send(path: "/api/welcome", method: "GET", body: nil, authorize: true)
         if response.status == 401 {
