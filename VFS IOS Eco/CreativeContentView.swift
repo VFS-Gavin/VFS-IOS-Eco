@@ -175,18 +175,22 @@ struct CollabsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Collabs")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                TextField("Search collabs", text: $search)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.search)
-                    .padding()
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .accessibilityIdentifier("collab-search")
-                    .onSubmit { Task { await reload() } }
+                HStack(spacing: 8) {
+                    Rectangle().fill(Color.collabPurple).frame(width: 12, height: 3)
+                    Text("STUDENT & ALUMNI PROJECTS")
+                        .font(.system(size: 11, weight: .medium))
+                        .tracking(1.4)
+                        .foregroundStyle(Color.stoneMuted)
+                }
+                CreativeHeadline(
+                    lead: "Make Something\n",
+                    accent: "Together",
+                    accentColor: .collabPurple,
+                    detail: "Find collaborators for your next project: short films, games, music videos, and beyond."
+                )
+                CreativeSearchField(placeholder: "Search collabs", text: $search, identifier: "collab-search") {
+                    Task { await reload() }
+                }
 
                 switch phase {
                 case .loading:
@@ -223,22 +227,20 @@ struct CollabsView: View {
     }
 
     private func collabCard(_ collab: CollabCard) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(collab.title).font(.headline).foregroundStyle(Color.stoneInk)
-            if let role = collab.role, !role.isEmpty {
-                Text(role).font(.subheadline).foregroundStyle(Color.ecoOrange)
-            }
-            if let owner = collab.ownerName, !owner.isEmpty {
-                Text(owner).font(.caption).foregroundStyle(Color.stoneLabel)
-            }
-            if let deadline = collab.deadline, !deadline.isEmpty {
-                Text(deadline).font(.caption).foregroundStyle(Color.stoneLabel)
+        SharpCard(bar: .collabPurple) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(collab.title).font(.system(.headline, design: .serif)).foregroundStyle(Color.stoneInk)
+                if let role = collab.role, !role.isEmpty {
+                    Text(role).font(.subheadline).foregroundStyle(Color.collabPurple)
+                }
+                if let owner = collab.ownerName, !owner.isEmpty {
+                    Text(owner).font(.caption).foregroundStyle(Color.stoneMuted)
+                }
+                if let deadline = collab.deadline, !deadline.isEmpty {
+                    Text(deadline).font(.caption).foregroundStyle(Color.stoneMuted)
+                }
             }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private func reload() async {
@@ -356,18 +358,22 @@ struct JobsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Jobs")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                TextField("Search jobs", text: $search)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.search)
-                    .padding()
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .accessibilityIdentifier("job-search")
-                    .onSubmit { Task { await reload() } }
+                HStack(spacing: 8) {
+                    Rectangle().fill(Color.jobGold).frame(width: 12, height: 3)
+                    Text("INDUSTRY OPPORTUNITIES")
+                        .font(.system(size: 11, weight: .medium))
+                        .tracking(1.4)
+                        .foregroundStyle(Color.stoneMuted)
+                }
+                CreativeHeadline(
+                    lead: "The Industry\n",
+                    accent: "at your fingertips",
+                    accentColor: .jobGold,
+                    detail: "Open positions pulled directly from top VFX, animation, and game studio career pages."
+                )
+                CreativeSearchField(placeholder: "Search jobs", text: $search, identifier: "job-search") {
+                    Task { await reload() }
+                }
 
                 switch phase {
                 case .loading:
@@ -425,19 +431,17 @@ struct JobsView: View {
             }
             ForEach(cards) { job in
                 NavigationLink(value: CreativeRoute.job(job.id)) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(job.title).font(.headline).foregroundStyle(Color.stoneInk)
-                        if let company = job.company, !company.isEmpty {
-                            Text(company).font(.subheadline).foregroundStyle(Color.ecoOrange)
-                        }
-                        if let location = job.location, !location.isEmpty {
-                            Text(location).font(.caption).foregroundStyle(Color.stoneLabel)
+                    SharpCard(bar: .jobGold) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(job.title).font(.system(.headline, design: .serif)).foregroundStyle(Color.stoneInk)
+                            if let company = job.company, !company.isEmpty {
+                                Text(company).font(.subheadline).foregroundStyle(Color.jobGold)
+                            }
+                            if let location = job.location, !location.isEmpty {
+                                Text(location).font(.caption).foregroundStyle(Color.stoneMuted)
+                            }
                         }
                     }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .buttonStyle(.plain)
             }
