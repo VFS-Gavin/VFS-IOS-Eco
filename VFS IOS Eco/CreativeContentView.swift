@@ -20,7 +20,7 @@ struct ProjectDetailView: View {
                     if let project {
                         cover(project.coverURL)
                         Text(project.title)
-                            .font(.system(.largeTitle, design: .serif))
+                            .font(.system(size: 40, weight: .bold, design: .serif))
                             .foregroundStyle(Color.stoneInk)
                         if !project.programLabel.isEmpty {
                             Text(project.programLabel)
@@ -39,11 +39,11 @@ struct ProjectDetailView: View {
                         }
                         Text(project.liked ? "\(project.likesCount) likes · You liked this" : "\(project.likesCount) likes")
                             .font(.caption)
-                            .foregroundStyle(Color.stoneLabel)
+                            .foregroundStyle(Color.stoneMuted)
                         if let description = project.description, !description.isEmpty {
                             Text(description)
                                 .font(.body)
-                                .foregroundStyle(Color.stoneLabel)
+                                .foregroundStyle(Color.stoneMuted)
                         }
                         if !project.tools.isEmpty {
                             Text(project.tools.joined(separator: ", "))
@@ -101,16 +101,16 @@ struct ProfileDetailView: View {
                 case .ready:
                     if let profile {
                         Text(profile.name ?? slug)
-                            .font(.system(.largeTitle, design: .serif))
+                            .font(.system(size: 40, weight: .bold, design: .serif))
                             .foregroundStyle(Color.stoneInk)
                         if let headline = profile.headline, !headline.isEmpty {
-                            Text(headline).font(.body).foregroundStyle(Color.stoneLabel)
+                            Text(headline).font(.body).foregroundStyle(Color.stoneMuted)
                         }
                         if let program = profile.programLabel, !program.isEmpty {
                             Text(program).font(.subheadline.weight(.semibold)).foregroundStyle(Color.ecoOrange)
                         }
                         if let location = profile.location, !location.isEmpty {
-                            Text(location).font(.subheadline).foregroundStyle(Color.stoneLabel)
+                            Text(location).font(.subheadline).foregroundStyle(Color.stoneMuted)
                         }
                         if profile.openToWork {
                             Text("Open to work").font(.caption.weight(.semibold)).foregroundStyle(Color.ecoOrange)
@@ -129,12 +129,9 @@ struct ProfileDetailView: View {
                                     Text(project.title).font(.headline).foregroundStyle(Color.stoneInk)
                                     Text("\(project.likesCount) likes")
                                         .font(.caption)
-                                        .foregroundStyle(Color.stoneLabel)
+                                        .foregroundStyle(Color.stoneMuted)
                                 }
-                                .padding(16)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .guideCard()
                             }
                             .buttonStyle(.plain)
                         }
@@ -201,7 +198,7 @@ struct CollabsView: View {
                     if collabs.isEmpty {
                         Text("No collabs found.")
                             .font(.body)
-                            .foregroundStyle(Color.stoneLabel)
+                            .foregroundStyle(Color.stoneMuted)
                     } else {
                         ForEach(collabs) { collab in
                             NavigationLink(value: CreativeRoute.collab(collab.id)) {
@@ -293,7 +290,7 @@ struct CollabDetailView: View {
                 case .ready:
                     if let collab {
                         Text(collab.title)
-                            .font(.system(.largeTitle, design: .serif))
+                            .font(.system(size: 40, weight: .bold, design: .serif))
                             .foregroundStyle(Color.stoneInk)
                         if let type = collab.type, !type.isEmpty {
                             Text(type).font(.subheadline.weight(.semibold)).foregroundStyle(Color.ecoOrange)
@@ -302,13 +299,13 @@ struct CollabDetailView: View {
                             Text(role).font(.body).foregroundStyle(Color.stoneInk)
                         }
                         if let owner = collab.ownerName, !owner.isEmpty {
-                            Text(owner).font(.subheadline).foregroundStyle(Color.stoneLabel)
+                            Text(owner).font(.subheadline).foregroundStyle(Color.stoneMuted)
                         }
                         if let deadline = collab.deadline, !deadline.isEmpty {
-                            Text(deadline).font(.subheadline).foregroundStyle(Color.stoneLabel)
+                            Text(deadline).font(.subheadline).foregroundStyle(Color.stoneMuted)
                         }
                         if let location = collab.location, !location.isEmpty {
-                            Text(location).font(.subheadline).foregroundStyle(Color.stoneLabel)
+                            Text(location).font(.subheadline).foregroundStyle(Color.stoneMuted)
                         }
                         if collab.remote == true {
                             Text("Remote").font(.caption.weight(.semibold)).foregroundStyle(Color.ecoOrange)
@@ -317,7 +314,7 @@ struct CollabDetailView: View {
                             Text("Paid").font(.caption.weight(.semibold)).foregroundStyle(Color.ecoOrange)
                         }
                         if let description = collab.description, !description.isEmpty {
-                            Text(description).font(.body).foregroundStyle(Color.stoneLabel)
+                            Text(description).font(.body).foregroundStyle(Color.stoneMuted)
                         }
                     }
                 }
@@ -403,7 +400,7 @@ struct JobsView: View {
                     }
                     if let productions = board?.productions, !productions.isEmpty {
                         Text("Productions")
-                            .font(.system(.title3, design: .serif))
+                            .font(.system(size: 22, weight: .black))
                             .foregroundStyle(Color.stoneInk)
                         ForEach(productions) { production in
                             productionCard(production)
@@ -412,7 +409,7 @@ struct JobsView: View {
                     if jobs.isEmpty && partnerJobs.isEmpty && (board?.productions.isEmpty != false) {
                         Text("No jobs found.")
                             .font(.body)
-                            .foregroundStyle(Color.stoneLabel)
+                            .foregroundStyle(Color.stoneMuted)
                     }
                 }
             }
@@ -426,7 +423,7 @@ struct JobsView: View {
         VStack(alignment: .leading, spacing: 12) {
             if !cards.isEmpty {
                 Text(title)
-                    .font(.system(.title3, design: .serif))
+                    .font(.system(size: 22, weight: .black))
                     .foregroundStyle(Color.stoneInk)
             }
             ForEach(cards) { job in
@@ -458,7 +455,7 @@ struct JobsView: View {
             if let start = production.startDate {
                 Text(production.endDate.map { "\(start) – \($0)" } ?? start)
                     .font(.caption)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
             }
             line(production.productionAddress)
             if let email = production.email, let url = URL(string: "mailto:\(email)") {
@@ -471,16 +468,13 @@ struct JobsView: View {
                 Link("Source", destination: url).font(.subheadline).tint(Color.ecoOrange)
             }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
     }
 
     private func line(_ value: String?) -> some View {
         Group {
             if let value, !value.isEmpty {
-                Text(value).font(.caption).foregroundStyle(Color.stoneLabel)
+                Text(value).font(.caption).foregroundStyle(Color.stoneMuted)
             }
         }
     }
@@ -552,13 +546,13 @@ struct JobDetailView: View {
                 case .ready:
                     if let job {
                         Text(job.title)
-                            .font(.system(.largeTitle, design: .serif))
+                            .font(.system(size: 40, weight: .bold, design: .serif))
                             .foregroundStyle(Color.stoneInk)
                         if let company = job.company, !company.isEmpty {
                             Text(company).font(.title3).foregroundStyle(Color.ecoOrange)
                         }
                         if let location = job.location, !location.isEmpty {
-                            Text(location).font(.subheadline).foregroundStyle(Color.stoneLabel)
+                            Text(location).font(.subheadline).foregroundStyle(Color.stoneMuted)
                         }
                         if let type = job.type, !type.isEmpty {
                             Text(type.replacingOccurrences(of: "_", with: " "))
@@ -574,7 +568,7 @@ struct JobDetailView: View {
                             Text("Remote").font(.caption.weight(.semibold)).foregroundStyle(Color.ecoOrange)
                         }
                         if let posted = job.postedAt, !posted.isEmpty {
-                            Text(posted).font(.caption).foregroundStyle(Color.stoneLabel)
+                            Text(posted).font(.caption).foregroundStyle(Color.stoneMuted)
                         }
                         if let address = job.applicationURL, let url = URL(string: address) {
                             Button("Apply") { openURL(url) }

@@ -425,16 +425,16 @@ struct PageSummaryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(.largeTitle, design: .serif))
+                .font(.system(size: 36, weight: .black))
                 .foregroundStyle(Color.stoneInk)
             Text(description)
-                .font(.body)
-                .foregroundStyle(Color.stoneLabel)
+                .font(.title3)
+                .foregroundStyle(Color.stoneMuted)
             Spacer()
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.stone)
+        .deskPage()
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -454,7 +454,7 @@ struct DestinationView: View {
     private var destination: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(.largeTitle, design: .serif))
+                .font(.system(size: 36, weight: .black))
             Text(subtitle)
                 .font(.subheadline)
                 .foregroundStyle(Color.stoneLabel)
@@ -482,6 +482,12 @@ extension Color {
     static let hubGreen = Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255)
     static let collabPurple = Color(red: 168 / 255, green: 85 / 255, blue: 247 / 255)
     static let jobGold = Color(red: 202 / 255, green: 138 / 255, blue: 4 / 255)
+    static let pagePink = Color(red: 219 / 255, green: 39 / 255, blue: 119 / 255)
+    static let pagePurple = Color(red: 147 / 255, green: 51 / 255, blue: 234 / 255)
+    static let pageTeal = Color(red: 13 / 255, green: 148 / 255, blue: 136 / 255)
+    static let pageAmber = Color(red: 217 / 255, green: 119 / 255, blue: 6 / 255)
+    static let pageEmerald = Color(red: 5 / 255, green: 150 / 255, blue: 105 / 255)
+    static let pageSlate = Color(red: 71 / 255, green: 85 / 255, blue: 105 / 255)
 
     init?(hex: String) {
         let cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

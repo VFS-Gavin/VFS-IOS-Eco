@@ -6,12 +6,12 @@ struct StudyPermitView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Study Permit & Visa Guide")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("A step-by-step guide for international students.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Study Permit",
+                    accent: "& Visa Guide",
+                    accentColor: .pagePurple,
+                    detail: "A step-by-step guide for international students."
+                )
 
                 step("01", "Letter of Acceptance", "You must include your official Letter of Acceptance (LOA) from VFS.", note: "Required Document")
                 step("02", "Gather Documents", "Prepare digital copies of all necessary documents. Ensure your passport is valid for your entire stay.", lines: [
@@ -30,13 +30,12 @@ struct StudyPermitView: View {
                         openURL(url)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.welcomeRed)
+                .buttonStyle(CrimsonButtonStyle())
                 .accessibilityIdentifier("study-permit-ircc")
 
                 Text("Have questions about the study permit process? Contact your coordinator for personalized assistance.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 NavigationLink(value: WelcomeRoute.coordinator) {
                     Text("Contact your coordinator")
                 }
@@ -47,7 +46,7 @@ struct StudyPermitView: View {
                         .font(.headline)
                     Text("Check the current processing times on the IRCC website to plan your arrival.")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     Button("Current processing times") {
                         if let url = URL(string: "https://www.canada.ca/en/immigration-refugees-citizenship/services/application/check-processing-times.html") {
                             openURL(url)
@@ -55,14 +54,11 @@ struct StudyPermitView: View {
                     }
                     .tint(Color.welcomeRed)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .pagePurple)
         .navigationTitle("Study Permit")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -73,11 +69,11 @@ struct StudyPermitView: View {
                 .font(.caption.weight(.bold))
                 .foregroundStyle(Color.welcomeRed)
             Text(title)
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
                 .foregroundStyle(Color.stoneInk)
             Text(body)
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             ForEach(lines, id: \.self) { line in
                 Text(line)
                     .font(.subheadline.weight(.medium))
@@ -89,10 +85,7 @@ struct StudyPermitView: View {
                     .foregroundStyle(Color.welcomeRed)
             }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
         .accessibilityIdentifier("study-permit-\(number)")
     }
 }
@@ -114,12 +107,12 @@ struct InsuranceView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Student Medical Insurance")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("All VFS students MUST have medical insurance while studying in Canada. Apply for coverage before you arrive. It must cover your first three months in British Columbia.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Student",
+                    accent: "Medical Insurance",
+                    accentColor: .hubBlue,
+                    detail: "All VFS students MUST have medical insurance while studying in Canada. Apply for coverage before you arrive. It must cover your first three months in British Columbia."
+                )
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Why Insurance is Essential")
@@ -127,28 +120,25 @@ struct InsuranceView: View {
                         .foregroundStyle(Color.welcomeRed)
                     Text("Medical costs in Canada without insurance can be extremely expensive:")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     ForEach(costs, id: \.1) { amount, label in
                         HStack {
                             Text(amount).font(.headline)
-                            Text(label).font(.subheadline).foregroundStyle(Color.stoneLabel)
+                            Text(label).font(.subheadline).foregroundStyle(Color.stoneMuted)
                         }
                     }
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("International Students")
-                        .font(.system(.title3, design: .serif))
+                        .font(.system(size: 22, weight: .black))
                     Text("VFS partners with Edvisor to provide StudyInsured coverage for international students at affordable rates.")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     Text("Coverage Cost")
                         .font(.caption)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     Text("$3.00 CAD/day")
                         .font(.title2.weight(.bold))
                         .foregroundStyle(Color.welcomeRed)
@@ -165,33 +155,29 @@ struct InsuranceView: View {
                     }
                     Text("EMERGENCY ASSISTANCE (24/7)")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     Button("1.866.883.9787") {
                         if let url = SupportLinks.phone("1.866.883.9787") { openURL(url) }
                     }
                     .tint(Color.welcomeRed)
                     Text("Contact within 48 hours of serious illness/injury for full benefits")
                         .font(.caption)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     Button("Visit Edvisor Insurance Portal") {
                         if let url = URL(string: "https://student-portal.edvisor.io/vancouverdfilmschoolinsurance/insurance?ref=eyJvZmZpY2VJZCI6MTM5MTksInVzZXJJZCI6NjM4NzB9") {
                             openURL(url)
                         }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.welcomeRed)
+                    .buttonStyle(CrimsonButtonStyle())
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Canadian Students")
-                        .font(.system(.title3, design: .serif))
+                        .font(.system(size: 22, weight: .black))
                     Text("Canadian students can remain on their home province's medical plan. You must notify your provincial health provider that you'll be studying at a post-secondary school in BC.")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     plan("BC", "Medical Services Plan (MSP)", "BC residents maintain existing coverage")
                     plan("AB", "AHCIP Coverage", "Alberta Health Care Insurance Plan")
                     plan("ON", "OHIP Coverage", "Ontario Health Insurance Plan")
@@ -205,13 +191,10 @@ struct InsuranceView: View {
                     .buttonStyle(.bordered)
                     .tint(Color.welcomeRed)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
 
                 Text("Frequently Asked Questions")
-                    .font(.system(.title2, design: .serif))
+                    .font(.system(size: 28, weight: .black))
                 faq("When does my coverage start?", "StudyInsured covers you from the time you leave home (up to 7 days prior to arrival) until one week after your program end date.")
                 faq("How do I make a claim?", "Visit the Edvisor insurance portal, register, then submit claims securely and track progress online.")
                 faq("Can I use other insurance providers?", "Yes. VFS accepts insurance from companies outside of Canada. However, we recommend StudyInsured through Edvisor for comprehensive coverage at affordable rates.")
@@ -219,7 +202,7 @@ struct InsuranceView: View {
 
                 Text("Student Services can help with insurance queries.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 Button("Contact Student Services") {
                     if let url = URL(string: "mailto:studentservices@vfs.com") { openURL(url) }
                 }
@@ -227,7 +210,7 @@ struct InsuranceView: View {
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .hubBlue)
         .navigationTitle("Medical Insurance")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -235,19 +218,16 @@ struct InsuranceView: View {
     private func plan(_ code: String, _ title: String, _ detail: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("\(code) · \(title)").font(.subheadline.weight(.semibold))
-            Text(detail).font(.caption).foregroundStyle(Color.stoneLabel)
+            Text(detail).font(.caption).foregroundStyle(Color.stoneMuted)
         }
     }
 
     private func faq(_ question: String, _ answer: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(question).font(.headline)
-            Text(answer).font(.subheadline).foregroundStyle(Color.stoneLabel)
+            Text(answer).font(.subheadline).foregroundStyle(Color.stoneMuted)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
     }
 }
 
@@ -257,42 +237,38 @@ struct StudentStoriesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Student Stories")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("Hear from the creators who walked these halls before you and are now shaping the entertainment industry.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Student",
+                    accent: "Stories",
+                    accentColor: .pagePurple,
+                    detail: "Hear from the creators who walked these halls before you and are now shaping the entertainment industry."
+                )
                 Button("Watch The VFS Experience") {
                     if let url = URL(string: "https://www.youtube.com/watch?v=8fuwY3h7GOM") {
                         openURL(url)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.welcomeRed)
+                .buttonStyle(CrimsonButtonStyle())
                 .accessibilityIdentifier("student-stories-video")
 
                 Text("Alumni Highlights")
-                    .font(.system(.title2, design: .serif))
+                    .font(.system(size: 28, weight: .black))
                 Text("Recent success stories from the VFS community")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Stories Coming Soon")
                         .font(.headline)
                     Text("We're gathering inspiring stories from our talented VFS alumni. Check back soon to read about their incredible journeys!")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
                 .accessibilityIdentifier("student-stories-empty")
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .pagePurple)
         .navigationTitle("Student Stories")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -338,34 +314,31 @@ struct AcceptanceView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Welcome to the VFS Family")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("We're thrilled you're here. Everything you need to prepare for arrival and start strong on day one.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Welcome to the",
+                    accent: "VFS Family",
+                    accentColor: .welcomeRed,
+                    detail: "We're thrilled you're here. Everything you need to prepare for arrival and start strong on day one."
+                )
 
                 Text("Before You Arrive")
-                    .font(.system(.title2, design: .serif))
+                    .font(.system(size: 28, weight: .black))
                 ForEach(Array(AcceptanceCatalog.steps.enumerated()), id: \.offset) { index, step in
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(index + 1). \(step.0)")
                             .font(.headline)
                         Text(step.1)
                             .font(.subheadline)
-                            .foregroundStyle(Color.stoneLabel)
+                            .foregroundStyle(Color.stoneMuted)
                     }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .guideCard()
                 }
 
                 Text("Program Preparation")
-                    .font(.system(.title2, design: .serif))
+                    .font(.system(size: 28, weight: .black))
                 Text("Select your program to access preparation resources, recommended reading, software requirements, and equipment guides.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
 
                 ForEach(AcceptanceCatalog.programs) { program in
                     if let slug = program.slug {
@@ -380,7 +353,7 @@ struct AcceptanceView: View {
 
                 Text("Don't see your program? More program prep docs are on the way. Check back soon for updates.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 Text("Our admissions team is here to help.")
                     .font(.subheadline)
                 Button("Contact Admissions") {
@@ -390,7 +363,7 @@ struct AcceptanceView: View {
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage()
         .navigationTitle("Acceptance")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -399,18 +372,15 @@ struct AcceptanceView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(ready ? "Ready" : "Coming Soon")
                 .font(.caption.weight(.bold))
-                .foregroundStyle(ready ? Color.welcomeRed : Color.stoneLabel)
+                .foregroundStyle(ready ? Color.welcomeRed : Color.stoneMuted)
             Text(program.name)
                 .font(.headline)
                 .foregroundStyle(Color.stoneInk)
             Text(program.detail)
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
         .opacity(ready ? 1 : 0.6)
         .accessibilityIdentifier("prep-\(program.name)")
     }
@@ -434,7 +404,7 @@ struct ProgramPrepView: View {
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage()
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -455,16 +425,16 @@ struct ProgramPrepView: View {
     private var acting: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Acting for Film & TV")
-                .font(.system(.largeTitle, design: .serif))
+                .font(.system(size: 36, weight: .black))
             Text("Preparation tips, reading lists, and resources for Acting for Film & TV and Acting Essentials students")
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             Text("What Can You Do to Prepare?")
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
             Text("Our VFS Acting Department has put together some helpful notes and tips for students leading up to their first day of class.")
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             Text("Before Your First Day")
-                .font(.system(.title2, design: .serif))
+                .font(.system(size: 28, weight: .black))
             tip("Read Books on Acting", "Read at least one or two good books on acting (in English — even if it isn't your first language).")
             tip("Read Plays & Scripts", "Read plays and scripts — read them aloud too! We recommend \"13 by Shanley: Thirteen Plays\" by John Patrick Shanley.")
             tip("Watch Plays & Movies", "Go see plays and movies. Immerse yourself in the craft and study how actors bring characters to life.")
@@ -484,10 +454,10 @@ struct ProgramPrepView: View {
             link("Off Camera", "https://offcamera.com/")
             link("Free Film & TV Scripts", "http://www.script-o-rama.com/")
             Text("VFS Recommended Reading List")
-                .font(.system(.title2, design: .serif))
+                .font(.system(size: 28, weight: .black))
             Text("These books will help build a strong foundation for your acting career.")
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             book("A Practical Handbook for the Actor", "Melissa Bruder et al.")
             book("The Intent to Live", "Larry Moss")
             book("Acting in Film", "Michael Caine", note: "Available as book and DVD")
@@ -504,31 +474,31 @@ struct ProgramPrepView: View {
     private var sound: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Sound Design")
-                .font(.system(.largeTitle, design: .serif))
+                .font(.system(size: 36, weight: .black))
             Text("Headphone requirements and audio equipment guide for Sound Design students")
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             Text("Headphone Requirements")
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
             Text("VFS Sound Design students are required to have a good set of headphones to use in class.")
                 .font(.subheadline)
             Text("Many students already own suitable headphones, but these notes are a guide for those who do not. Students should bring their headphones if they already own a set.")
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             Text("The good news is you don't have to spend a lot of money or buy an expensive set. You can find suitable headphones in the $100 range.")
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             Text("Important: Use Wired Headphones")
                 .font(.headline)
             Text("We recommend you look for a set that comes with a cord. Bluetooth headphones can sometimes experience a lag, which isn't ideal for sound design work.")
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             Text("Recommended Brands")
-                .font(.system(.title2, design: .serif))
+                .font(.system(size: 28, weight: .black))
             brand("Audio Technica", "ATH-M40x Professional Monitor Headphones")
             brand("Sony", "Professional Line")
             brand("Sennheiser", "Professional Line")
             Text("Not Acceptable for Class")
-                .font(.system(.title2, design: .serif))
+                .font(.system(size: 28, weight: .black))
             brand("Beats by Dre", "Consumer-grade, colored sound profile not suitable for professional audio work")
             brand("Earbud-type headphones", "Insufficient audio isolation and frequency response for sound design")
             Text("Quick Shopping Checklist")
@@ -544,12 +514,9 @@ struct ProgramPrepView: View {
     private func tip(_ title: String, _ body: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.headline)
-            Text(body).font(.subheadline).foregroundStyle(Color.stoneLabel)
+            Text(body).font(.subheadline).foregroundStyle(Color.stoneMuted)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
     }
 
     private func link(_ name: String, _ address: String) -> some View {
@@ -562,9 +529,9 @@ struct ProgramPrepView: View {
     private func book(_ title: String, _ author: String, note: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title).font(.headline)
-            Text("by \(author)").font(.subheadline).foregroundStyle(Color.stoneLabel)
+            Text("by \(author)").font(.subheadline).foregroundStyle(Color.stoneMuted)
             if let note {
-                Text(note).font(.caption).foregroundStyle(Color.stoneLabel)
+                Text(note).font(.caption).foregroundStyle(Color.stoneMuted)
             }
         }
         .accessibilityIdentifier("book-\(title)")
@@ -573,7 +540,7 @@ struct ProgramPrepView: View {
     private func brand(_ name: String, _ detail: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(name).font(.headline)
-            Text(detail).font(.subheadline).foregroundStyle(Color.stoneLabel)
+            Text(detail).font(.subheadline).foregroundStyle(Color.stoneMuted)
         }
     }
 }

@@ -25,12 +25,12 @@ struct InstructorsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Meet Your Instructors")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("Learn directly from \(directory.everyone.count) award-winning professionals who are shaping the entertainment industry today.")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Meet Your",
+                    accent: "Instructors",
+                    accentColor: .pagePink,
+                    detail: "Learn directly from \(directory.everyone.count) award-winning professionals who are shaping the entertainment industry today."
+                )
 
                 switch phase {
                 case .loading:
@@ -51,7 +51,7 @@ struct InstructorsView: View {
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .pagePink)
         .navigationTitle("Instructors")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
@@ -113,7 +113,7 @@ struct InstructorsView: View {
                 .font(.headline)
             Text("Try adjusting your search or selecting a different program.")
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
         }
         .accessibilityIdentifier("instructors-empty")
     }
@@ -137,7 +137,7 @@ struct InstructorsView: View {
                     .foregroundStyle(Color.welcomeRed)
             }
             Text(person.name)
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
                 .foregroundStyle(Color.stoneInk)
             if let title = person.title, !title.isEmpty {
                 Text(title)
@@ -147,7 +147,7 @@ struct InstructorsView: View {
             if let bio = person.bio, !bio.isEmpty {
                 Text(shownBio(bio, id: person.id))
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 if bio.count > 150 {
                     Button(expanded.contains(person.id) ? "Show less" : "Read more") {
                         if expanded.contains(person.id) {
@@ -166,10 +166,7 @@ struct InstructorsView: View {
                 link("Website", person.websiteURL)
             }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
         .accessibilityIdentifier("instructor-\(person.id)")
     }
 

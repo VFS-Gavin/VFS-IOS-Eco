@@ -6,12 +6,12 @@ struct MentalHealthView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                Text("Mental Health Resources")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text(MentalHealthCatalog.intro)
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "Mental Health",
+                    accent: "Resources",
+                    accentColor: .pageTeal,
+                    detail: MentalHealthCatalog.intro
+                )
                 Text(MentalHealthCatalog.startHere)
                     .font(.subheadline)
                     .foregroundStyle(Color.stoneInk)
@@ -32,16 +32,13 @@ struct MentalHealthView: View {
                         .foregroundStyle(Color.stoneInk)
                     Text(MentalHealthCatalog.disclaimer)
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .pageTeal)
         .navigationTitle("Mental Health")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -49,11 +46,11 @@ struct MentalHealthView: View {
     private func section(_ section: SupportSection, banner: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(section.title)
-                .font(.system(.title2, design: .serif))
+                .font(.system(size: 28, weight: .black))
                 .foregroundStyle(Color.stoneInk)
             Text(section.subtitle)
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             if let banner {
                 Text(banner)
                     .font(.subheadline.weight(.medium))
@@ -84,12 +81,12 @@ struct MentalHealthView: View {
                 } else if let tag = resource.tag {
                     Text(tag)
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                 }
             }
             Text(resource.detail)
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             if let note = resource.note {
                 Text(note)
                     .font(.caption.weight(.semibold))
@@ -97,8 +94,7 @@ struct MentalHealthView: View {
             }
             if let label = resource.phoneLabel, let url = resource.phoneURL {
                 Button(label) { openURL(url) }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.welcomeRed)
+                    .buttonStyle(CrimsonButtonStyle())
             }
             if let label = resource.secondPhoneLabel, let url = resource.secondPhoneURL {
                 Button(label) { openURL(url) }
@@ -109,8 +105,7 @@ struct MentalHealthView: View {
                 NavigationLink(value: WelcomeRoute.coordinator) {
                     Text(resource.siteLabel ?? "Contact Your Coordinator")
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.welcomeRed)
+                .buttonStyle(CrimsonButtonStyle())
             } else if let label = resource.siteLabel, let url = resource.siteURL {
                 Button(label) { openURL(url) }
                     .buttonStyle(.bordered)
@@ -119,13 +114,10 @@ struct MentalHealthView: View {
             if let hours = resource.hours {
                 Text(hours)
                     .font(.caption)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
             }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .guideCard()
         .accessibilityIdentifier("support-\(resource.name)")
     }
 }

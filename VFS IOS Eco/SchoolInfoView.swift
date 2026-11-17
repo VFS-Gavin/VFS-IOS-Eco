@@ -23,20 +23,15 @@ struct SchoolInfoView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("School Information")
-                    .font(.system(.largeTitle, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text("Access important dates, exclusive discounts, and official VFS merchandise")
-                    .font(.body)
-                    .foregroundStyle(Color.stoneLabel)
+                GuideHero(
+                    lead: "School",
+                    accent: "Information",
+                    accentColor: .pagePink,
+                    detail: "Access important dates, exclusive discounts, and official VFS merchandise"
+                )
 
-                Picker("Section", selection: $tab) {
-                    ForEach(Tab.allCases) { item in
-                        Text(item.rawValue).tag(item)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("school-info-tabs")
+                GuidePills(options: Array(Tab.allCases), title: { $0.rawValue }, selection: $tab)
+                    .accessibilityIdentifier("school-info-tabs")
 
                 switch tab {
                 case .discounts:
@@ -49,7 +44,7 @@ struct SchoolInfoView: View {
             }
             .padding(20)
         }
-        .background(Color.stone)
+        .deskPage(tint: .pagePink)
         .navigationTitle("School Info")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -61,19 +56,16 @@ struct SchoolInfoView: View {
                     .font(.headline)
                 Text("Always show your valid VFS Student ID before paying. Some businesses don't advertise student discounts, so it never hurts to ask!")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .guideCard()
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(SchoolInfoCatalog.categories, id: \.id) { item in
                         Button(item.name) { category = item.id }
                             .buttonStyle(.bordered)
-                            .tint(category == item.id ? Color.welcomeRed : Color.stoneLabel)
+                            .tint(category == item.id ? Color.welcomeRed : Color.stoneMuted)
                     }
                 }
             }
@@ -87,7 +79,7 @@ struct SchoolInfoView: View {
                         Spacer()
                         Text(discount.price)
                             .font(.subheadline.weight(.bold))
-                            .foregroundStyle(Color.stoneLabel)
+                            .foregroundStyle(Color.stoneMuted)
                     }
                     Text(discount.discount)
                         .font(.system(size: 11, weight: .bold))
@@ -97,44 +89,37 @@ struct SchoolInfoView: View {
                         Text("SHOW ID")
                             .font(.system(size: 10, weight: .bold))
                             .tracking(1.1)
-                            .foregroundStyle(Color.stoneLabel)
+                            .foregroundStyle(Color.stoneMuted)
                     }
                     Text(discount.address)
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     if let link = discount.link {
                         Button("More Info") { openURL(link) }
                             .font(.subheadline.weight(.semibold))
                             .tint(Color.welcomeRed)
                     }
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
             }
             Text("Showing all \(visible.count) discounts")
                 .font(.footnote)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
                 .frame(maxWidth: .infinity)
 
             Text("VFS Partners")
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
             ForEach(SchoolInfoCatalog.partners) { partner in
                 VStack(alignment: .leading, spacing: 8) {
                     Text(partner.name)
                         .font(.headline)
                     Text(partner.description)
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     Button("Learn More") { openURL(partner.link) }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.welcomeRed)
+                        .buttonStyle(CrimsonButtonStyle())
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -145,11 +130,8 @@ struct SchoolInfoView: View {
                 Text("$$$  Premium pricing")
             }
             .font(.subheadline)
-            .foregroundStyle(Color.stoneLabel)
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .foregroundStyle(Color.stoneMuted)
+            .guideCard()
         }
     }
 
@@ -162,13 +144,13 @@ struct SchoolInfoView: View {
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Ready to Shop?")
-                    .font(.system(.title3, design: .serif))
+                    .font(.system(size: 22, weight: .black))
                     .foregroundStyle(Color.white)
                 Text("Browse the full collection online and get free pickup at campus reception")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 Button("Visit VFS Shop") { openURL(SchoolInfoCatalog.shopURL) }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(CrimsonButtonStyle())
                     .tint(Color.white)
                     .foregroundStyle(Color.stoneInk)
             }
@@ -181,12 +163,7 @@ struct SchoolInfoView: View {
 
     private var calendar: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Picker("Calendar", selection: $calendarTab) {
-                ForEach(CalendarTab.allCases) { item in
-                    Text(item.rawValue).tag(item)
-                }
-            }
-            .pickerStyle(.segmented)
+            GuidePills(options: Array(CalendarTab.allCases), title: { $0.rawValue }, selection: $calendarTab)
 
             switch calendarTab {
             case .holidays:
@@ -200,10 +177,10 @@ struct SchoolInfoView: View {
     private var holidays: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("2026 School Calendar")
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
             Text("Breaks & Statutory Holidays")
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             ForEach(SchoolInfoCatalog.holidays) { holiday in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(holiday.name)
@@ -211,7 +188,7 @@ struct SchoolInfoView: View {
                         .foregroundStyle(holiday.highlight ? Color.welcomeRed : Color.stoneInk)
                     Text(holiday.date)
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     if holiday.highlight {
                         Text("EXTENDED BREAK")
                             .font(.system(size: 10, weight: .bold))
@@ -219,10 +196,7 @@ struct SchoolInfoView: View {
                             .foregroundStyle(Color.welcomeRed)
                     }
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
             }
             Button("Full Calendar") { openURL(SchoolInfoCatalog.fullCalendarURL) }
                 .tint(Color.welcomeRed)
@@ -231,35 +205,29 @@ struct SchoolInfoView: View {
                     .font(.headline)
                 Text("Each program has 3-6 start dates per year")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
                 Button("View Start Dates") { openURL(SchoolInfoCatalog.startDatesURL) }
                     .tint(Color.welcomeRed)
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .guideCard()
         }
     }
 
     private var schedules: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Term 1 Class Schedules")
-                .font(.system(.title3, design: .serif))
+                .font(.system(size: 22, weight: .black))
             Text("View sample schedules for your program")
                 .font(.subheadline)
-                .foregroundStyle(Color.stoneLabel)
+                .foregroundStyle(Color.stoneMuted)
             VStack(alignment: .leading, spacing: 6) {
                 Text("Important: Sample Schedules Only")
                     .font(.headline)
                 Text("These are SAMPLE SCHEDULES for reference purposes only. Your actual schedule may differ based on your start date, program requirements, and campus availability. Official schedules will be provided by your Admissions Coordinator and instructors.")
                     .font(.subheadline)
-                    .foregroundStyle(Color.stoneLabel)
+                    .foregroundStyle(Color.stoneMuted)
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .guideCard()
 
             Picker("Select Your Program", selection: $programCode) {
                 Text("Choose a program").tag("")
@@ -275,31 +243,24 @@ struct SchoolInfoView: View {
                         .font(.headline)
                     Text("Term 1 Sample Schedule - \(program.term)")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                     Button("Open sample schedule") {
                         if let url = SchoolInfoCatalog.scheduleURL(file: program.file, base: APIConfiguration.baseURL) {
                             openURL(url)
                         }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.welcomeRed)
+                    .buttonStyle(CrimsonButtonStyle())
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
             } else {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Select a Program")
                         .font(.headline)
                     Text("Choose your program above to view the Term 1 schedule")
                         .font(.subheadline)
-                        .foregroundStyle(Color.stoneLabel)
+                        .foregroundStyle(Color.stoneMuted)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .guideCard()
             }
         }
     }
