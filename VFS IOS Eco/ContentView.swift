@@ -240,6 +240,8 @@ struct WelcomeHubView: View {
                     StudentStoriesView()
                 case .instructors:
                     InstructorsView(session: session)
+                case .paymentMethods:
+                    PaymentMethodsView()
                 case .programPrep(let slug):
                     ProgramPrepView(slug: slug)
                 case .summary(let title, let description):

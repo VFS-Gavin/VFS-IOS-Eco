@@ -83,6 +83,15 @@ final class VFS_IOS_EcoTests: XCTestCase {
             WelcomeRoute(card: WelcomeCard(title: "Instructors", description: "Meet the VFS faculty", path: "/welcome/instructors")),
             .instructors
         )
+        XCTAssertEqual(
+            WelcomeRoute(card: WelcomeCard(title: "Payment Methods", description: "How to pay your tuition and fees", path: "/welcome/payment-methods")),
+            .paymentMethods
+        )
+        XCTAssertEqual(PaymentCatalog.provinces.count, 13)
+        XCTAssertEqual(PaymentCatalog.receivables, "receivables@vfs.com")
+        XCTAssertEqual(PaymentCatalog.swift, "BOFMCAM2")
+        XCTAssertEqual(PaymentCatalog.accountNumber, "1823-417")
+        XCTAssertTrue(PaymentCatalog.cardFee.contains("3.5%"))
         let url = SchoolInfoCatalog.scheduleURL(
             file: "MKD_Sample Schedule_T1_Sep_2025.pdf",
             base: URL(string: "https://welcome.vfs.com")!
