@@ -15,4 +15,7 @@ git worktree add ../_worktrees/vfseco-<branch> -b <branch>
 - Develop the change in that worktree. From `master` in the main checkout: `git merge --no-ff <branch>`.
 - Never commit `.env`. It holds the app key and local settings. Leave it unstaged. `.env.example` may be committed when it has no secrets.
 - Identity for this repo: Gavin Etmanski, getmanski@vfs.com. Remote: `https://github.com/VFS-Gavin/VFS-IOS-Eco.git`.
-- Do not push, force-push, or deploy unless explicitly asked.
+- Do not change git config unless Gavin asks.
+- Commit each finished slice on its branch, merge it into `master` with `git merge --no-ff`, and push `master`. Gavin asked for this so finished work does not pile up.
+- Do not force-push. Do not deploy unless Gavin says so. Do not push the website repo.
+- The website repo is `vfs-portals` on `dev/getmanski`. Do not merge that repo to `master`.

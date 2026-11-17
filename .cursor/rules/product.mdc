@@ -1,0 +1,23 @@
+---
+description: Creative ECOsystem and Welcome Hub product boundaries
+alwaysApply: true
+---
+
+# Two products
+
+The app is Welcome Hub and Creative ECOsystem. ECO is capitalized. Never write "Creative Eco".
+
+- Welcome Hub is the front door for `pending` and `student`. Accent `#8B1A1A`. Do not paint it orange.
+- Creative ECOsystem is the other tab, for `pending`, `student`, and `alumni`. Actions use orange `#EA580C`.
+- Alumni never see Welcome Hub. They land on the portfolio, same as `RequireStudentAuth` sending `role === alumni` off `/welcome`.
+- Admin may sign in and use the student app. Do not build dashboard, quick links, moderation, or analytics.
+- Industry gets no Welcome Hub. Reduced Creative only: portfolio, collabs, and jobs, behind their flags.
+- Prospects stay out. They belong to the vfs.edu embed. Sign-in returns an error and no bearer token.
+
+`pending` is a real `users.role`. A new @vfs.com or @vfs.edu magic-link account is created as `student`. Any other email is created as `pending`. Promotion to student happens on the website when they later sign in with a VFS email. Do not promote them in the app. `/api/me` returns `role` as stored.
+
+Announcements have no `pending` value. A `student` target is also shown to `pending`. Welcome Hub student announcements and `welcome_hub` SiteNotifications stay on the Welcome tab. `creative_community` SiteNotifications stay on the Creative tab. Drafts stay hidden. Do not publish the Storyhive draft.
+
+Website repo: `c:\Users\getmanski\Desktop\vfs-cursor\vfs-portals`, remote `https://github.com/VFS-Gavin/VFS-Eco.git`, branch off `dev/getmanski`. Do not merge that repo to `master`. Do not put PHP in the iOS repo. Do not deploy unless Gavin says so. Local Laravel is `http://127.0.0.1:8005`.
+
+People: Gavin Etmanski, getmanski@vfs.com. Do not invent other staff names. Do not change git config unless Gavin asks.
