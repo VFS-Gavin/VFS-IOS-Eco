@@ -261,7 +261,7 @@ struct WorkshopsView: View {
                     .font(.body)
                     .foregroundStyle(Color.stoneMuted)
                 ForEach(categories, id: \.0) { category in
-                    NavigationLink(value: CreativeRoute.workshopCategory(category.0)) {
+                    CreativeLink(route: CreativeRoute.workshopCategory(category.0)) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(category.1).font(.system(size: 26, weight: .bold, design: .serif)).foregroundStyle(Color.stoneInk)
                             Text(category.2).font(.subheadline).foregroundStyle(Color.stoneMuted)

@@ -43,7 +43,7 @@ struct DocumentRequestsView: View {
     }
 
     private func requestCard(route: CreativeRoute, eyebrow: String, title: String, detail: String, action: String, tint: Color) -> some View {
-        NavigationLink(value: route) {
+        CreativeLink(route: route) {
             VStack(alignment: .leading, spacing: 12) {
                 Rectangle().fill(tint).frame(height: 3)
                 VStack(alignment: .leading, spacing: 8) {

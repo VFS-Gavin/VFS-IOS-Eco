@@ -133,11 +133,11 @@ struct DiscoveryView: View {
                 ForEach(hits) { hit in
                     discoveryRow(hit)
                 }
-                NavigationLink(value: CreativeRoute.discoveryList(.pitches)) {
+                CreativeLink(route: CreativeRoute.discoveryList(.pitches)) {
                     discoveryCard("Write an elevator pitch", "One sentence for the concept, then a fuller write-up if you want. Posted on the pitches page, not by searching a title.", cue: "Open pitches")
                 }
                 .buttonStyle(.plain)
-                NavigationLink(value: CreativeRoute.discoveryList(.top5)) {
+                CreativeLink(route: CreativeRoute.discoveryList(.top5)) {
                     discoveryCard("Build your Top 5", "The films, games, books, and people that shaped you, with a note on why each one matters.", cue: "Your Top 5")
                 }
                 .buttonStyle(.plain)
@@ -169,7 +169,7 @@ struct DiscoveryView: View {
     @ViewBuilder
     private func discoveryRow(_ hit: DiscoveryHit) -> some View {
         if hit.resultType == "profile", let slug = hit.slug, !slug.isEmpty {
-            NavigationLink(value: CreativeRoute.profile(slug)) {
+            CreativeLink(route: CreativeRoute.profile(slug)) {
                 discoveryRowBody(hit)
             }
             .buttonStyle(.plain)
@@ -211,7 +211,7 @@ struct DiscoveryView: View {
     }
 
     private func browseLink(_ title: String, _ kind: DiscoveryListKind) -> some View {
-        NavigationLink(value: CreativeRoute.discoveryList(kind)) {
+        CreativeLink(route: CreativeRoute.discoveryList(kind)) {
             Text(title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(accent)
@@ -387,7 +387,7 @@ struct StudiosView: View {
                     .font(.body)
                     .foregroundStyle(Color.stoneMuted)
                 ForEach(StudioCatalog.projects) { project in
-                    NavigationLink(value: CreativeRoute.studio(project.id)) {
+                    CreativeLink(route: CreativeRoute.studio(project.id)) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(project.title).font(.system(size: 22, weight: .bold, design: .serif)).foregroundStyle(Color.stoneInk)
                             Text(project.client).font(.subheadline).foregroundStyle(Color(red: 164 / 255, green: 16 / 255, blue: 52 / 255))

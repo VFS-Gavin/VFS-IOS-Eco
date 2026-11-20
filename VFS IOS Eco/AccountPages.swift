@@ -83,7 +83,7 @@ struct ManagePortfolioView: View {
 
     @ViewBuilder
     private func projects(_ rows: [ManagedProject]) -> some View {
-        NavigationLink(value: CreativeRoute.createProject) {
+        CreativeLink(route: CreativeRoute.createProject) {
             Text("Create New Project")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.white)
@@ -105,12 +105,12 @@ struct ManagePortfolioView: View {
                 .foregroundStyle(Color.stoneMuted)
             ForEach(rows) { project in
                 VStack(alignment: .leading, spacing: 8) {
-                    NavigationLink(value: CreativeRoute.project(project.id)) {
+                    CreativeLink(route: CreativeRoute.project(project.id)) {
                         projectCard(project)
                     }
                     .buttonStyle(.plain)
                     HStack(spacing: 8) {
-                        NavigationLink(value: CreativeRoute.editProject(project.id)) {
+                        CreativeLink(route: CreativeRoute.editProject(project.id)) {
                             Text("Edit")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(Color.ecoOrange)
@@ -151,7 +151,7 @@ struct ManagePortfolioView: View {
                     .tracking(1.1)
                     .foregroundStyle(Color.stoneMuted)
                 ForEach(board.liked) { project in
-                    NavigationLink(value: CreativeRoute.project(project.id)) {
+                    CreativeLink(route: CreativeRoute.project(project.id)) {
                         projectCard(project)
                     }
                     .buttonStyle(.plain)
@@ -178,7 +178,7 @@ struct ManagePortfolioView: View {
                 .foregroundStyle(Color.stoneMuted)
             ForEach(rows) { project in
                 VStack(alignment: .leading, spacing: 8) {
-                    NavigationLink(value: CreativeRoute.project(project.id)) {
+                    CreativeLink(route: CreativeRoute.project(project.id)) {
                         projectCard(project)
                     }
                     .buttonStyle(.plain)
@@ -208,7 +208,7 @@ struct ManagePortfolioView: View {
 
         return Group {
             if let slug = idea.profileSlug, !slug.isEmpty {
-                NavigationLink(value: CreativeRoute.profile(slug)) { row }
+                CreativeLink(route: CreativeRoute.profile(slug)) { row }
                     .buttonStyle(.plain)
             } else {
                 row

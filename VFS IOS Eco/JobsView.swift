@@ -164,7 +164,7 @@ struct JobsView: View {
                 Text(empty).foregroundStyle(Color.stoneMuted)
             }
             ForEach(cards) { job in
-                NavigationLink(value: CreativeRoute.job(job.id)) {
+                CreativeLink(route: CreativeRoute.job(job.id)) {
                     SharpCard(bar: .jobGold) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(job.title).font(.system(.headline, design: .serif)).foregroundStyle(Color.stoneInk)
