@@ -13,15 +13,11 @@ struct HousingHubView: View {
                 Text("Connect with the VFS community. Find safe, student-friendly housing or meet your future roommates.")
                     .font(.subheadline)
                     .foregroundStyle(Color.stoneMuted)
-                NavigationLink {
-                    HousingListingsView(session: session)
-                } label: {
+                NavigationLink(value: WelcomeRoute.housingListings) {
                     hubRow("Browse Listings", "Explore apartments, rooms, and shared houses available now.")
                 }
                 .buttonStyle(.plain)
-                NavigationLink {
-                    HousingStudentsView(session: session)
-                } label: {
+                NavigationLink(value: WelcomeRoute.housingStudents) {
                     hubRow("Find Roommates", "Connect with students who are looking for a place to share.")
                 }
                 .buttonStyle(.plain)
@@ -32,15 +28,11 @@ struct HousingHubView: View {
                 Text("Help a fellow student find their home away from home. List your property or spare room on the VFS Housing Portal today.")
                     .font(.subheadline)
                     .foregroundStyle(Color.stoneMuted)
-                NavigationLink {
-                    LandlordListingView(session: session)
-                } label: {
+                NavigationLink(value: WelcomeRoute.housingLandlord) {
                     hubRow("List Your Property", "Post a room or a full unit for VFS students.")
                 }
                 .buttonStyle(.plain)
-                NavigationLink {
-                    HousingSeekingView(session: session)
-                } label: {
+                NavigationLink(value: WelcomeRoute.housingSeeking) {
                     hubRow("Student Profile", "Tell other students what kind of place you are looking for.")
                 }
                 .buttonStyle(.plain)
@@ -78,9 +70,7 @@ struct HousingListingsView: View {
                     Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
                 }
                 ForEach(listings) { listing in
-                    NavigationLink {
-                        HousingListingDetailView(session: session, id: listing.id)
-                    } label: {
+                    NavigationLink(value: WelcomeRoute.housingProperty(listing.id)) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(listing.name).font(.headline).foregroundStyle(Color.stoneInk)
                             Text(listing.address).font(.caption).foregroundStyle(Color.stoneMuted)

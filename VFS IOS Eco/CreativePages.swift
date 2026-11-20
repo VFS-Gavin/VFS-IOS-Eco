@@ -373,8 +373,6 @@ struct FacilitiesView: View {
 }
 
 struct StudiosView: View {
-    @State private var selected: StudioProject?
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -389,9 +387,7 @@ struct StudiosView: View {
                     .font(.body)
                     .foregroundStyle(Color.stoneMuted)
                 ForEach(StudioCatalog.projects) { project in
-                    Button {
-                        selected = project
-                    } label: {
+                    NavigationLink(value: CreativeRoute.studio(project.id)) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(project.title).font(.system(size: 22, weight: .bold, design: .serif)).foregroundStyle(Color.stoneInk)
                             Text(project.client).font(.subheadline).foregroundStyle(Color(red: 164 / 255, green: 16 / 255, blue: 52 / 255))
@@ -412,9 +408,6 @@ struct StudiosView: View {
         .background(Color.stone)
         .navigationTitle("VFS Studios")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $selected) { project in
-            StudioDetailView(project: project)
-        }
     }
 }
 

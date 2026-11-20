@@ -49,20 +49,6 @@ struct WelcomeFormsView: View {
         .deskPage(tint: .pageSlate)
         .navigationTitle("Forms")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: WelcomeFormLink.self) { link in
-            switch link {
-            case .survey:
-                QuestionnaireFormView(session: session)
-            case .parentConsent:
-                ParentConsentFormView(session: session)
-            case .contact:
-                ContactUpdateFormView(session: session)
-            case .confidential:
-                ConfidentialFormView(session: session)
-            case .t2202:
-                T2202FormView(session: session)
-            }
-        }
     }
 
     private func formCard(_ item: WelcomeFormItem) -> some View {

@@ -167,6 +167,9 @@ enum CreativeRoute: Hashable {
     case account(AccountArea)
     case workshopCategory(String)
     case discoveryList(DiscoveryListKind)
+    case createProject
+    case editProject(Int)
+    case studio(String)
 }
 
 enum AccountArea: String, Hashable {
@@ -330,6 +333,11 @@ nonisolated enum WelcomeRoute: Hashable {
     case connect
     case documents
     case housing
+    case housingListings
+    case housingStudents
+    case housingLandlord
+    case housingSeeking
+    case housingProperty(Int)
     case programPrep(String)
     case summary(title: String, description: String)
 

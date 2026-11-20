@@ -36,24 +36,14 @@ struct AccountMenu: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(Color.stoneMuted)
+                    .rotationEffect(.degrees(open ? 180 : 0))
+                    .animation(.easeOut(duration: 0.18), value: open)
             }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("account-menu")
         .accessibilityLabel("Account")
-        .fullScreenCover(isPresented: $open) {
-            ZStack(alignment: .topTrailing) {
-                Color.black.opacity(0.28)
-                    .ignoresSafeArea()
-                    .onTapGesture { open = false }
-                panel
-                    .padding(.top, 8)
-                    .padding(.trailing, 12)
-                    .padding(.leading, 36)
-            }
-            .background(MenuClearBackground())
-            .presentationBackground(.clear)
-        }
+        .background(AccountMenuLayer(open: $open, panel: AnyView(panel)))
     }
 
     private var panel: some View {
@@ -265,17 +255,86 @@ struct AccountMenu: View {
     }
 }
 
-private struct MenuClearBackground: UIViewRepresentable {
+private struct AccountMenuLayer: UIViewRepresentable {
+    @Binding var open: Bool
+    var panel: AnyView
+
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
+        view.isUserInteractionEnabled = false
         view.backgroundColor = .clear
-        DispatchQueue.main.async {
-            view.superview?.superview?.backgroundColor = .clear
-        }
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
-        uiView.backgroundColor = .clear
+        context.coordinator.sync(open: open, panel: panel, anchor: uiView) {
+            open = false
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator {
+        var dim: UIControl?
+        var host: UIHostingController<AnyView>?
+
+        func sync(open: Bool, panel: AnyView, anchor: UIView, close: @escaping () -> Void) {
+            guard let window = anchor.window else { return }
+            if open {
+                show(panel: panel, window: window, close: close)
+            } else {
+                hide()
+            }
+        }
+
+        private func show(panel: AnyView, window: UIWindow, close: @escaping () -> Void) {
+            let width = min(320, window.bounds.width - 24)
+            let top = window.safeAreaInsets.top + 48
+            let limit = window.bounds.height - top - 16
+            if dim == nil {
+                let shade = UIControl(frame: window.bounds)
+                shade.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                shade.backgroundColor = UIColor.black.withAlphaComponent(0.28)
+                shade.alpha = 0
+                shade.addAction(UIAction { _ in close() }, for: .touchUpInside)
+                window.addSubview(shade)
+                dim = shade
+
+                let controller = UIHostingController(rootView: panel)
+                controller.safeAreaRegions = []
+                controller.view.backgroundColor = .clear
+                controller.view.alpha = 0
+                let height = min(controller.sizeThatFits(in: CGSize(width: width, height: limit)).height, limit)
+                controller.view.frame = CGRect(x: window.bounds.width - width - 12, y: top, width: width, height: height)
+                controller.view.transform = CGAffineTransform(translationX: 0, y: -6)
+                window.addSubview(controller.view)
+                host = controller
+                UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
+                    shade.alpha = 1
+                    controller.view.alpha = 1
+                    controller.view.transform = .identity
+                }
+            } else if let host {
+                host.rootView = panel
+                let height = min(host.sizeThatFits(in: CGSize(width: width, height: limit)).height, limit)
+                host.view.frame = CGRect(x: window.bounds.width - width - 12, y: top, width: width, height: height)
+            }
+        }
+
+        private func hide() {
+            guard dim != nil || host != nil else { return }
+            let shade = dim
+            let view = host?.view
+            dim = nil
+            host = nil
+            UIView.animate(withDuration: 0.14, delay: 0, options: .curveEaseIn, animations: {
+                shade?.alpha = 0
+                view?.alpha = 0
+                view?.transform = CGAffineTransform(translationX: 0, y: -6)
+            }, completion: { _ in
+                view?.removeFromSuperview()
+                shade?.removeFromSuperview()
+            })
+        }
     }
 }
