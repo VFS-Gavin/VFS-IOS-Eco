@@ -440,6 +440,8 @@ struct DiscoveryListView: View {
     var kind: DiscoveryListKind
     var client: APIClient = APIClient()
     @State private var items: [DiscoveryListItem] = []
+    @State private var seen: [DiscoveryListItem] = []
+    @State private var saved: [DiscoveryListItem] = []
     @State private var message: String?
     @State private var loading = false
     private let accent = Color(red: 14 / 255, green: 165 / 255, blue: 233 / 255)
@@ -457,21 +459,15 @@ struct DiscoveryListView: View {
                 if let message {
                     Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
                 }
-                ForEach(items) { item in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(item.title).font(.headline).foregroundStyle(Color.stoneInk)
-                        if let subtitle = item.subtitle, !subtitle.isEmpty {
-                            Text(subtitle).font(.caption).foregroundStyle(accent)
-                        }
-                        if let body = item.body, !body.isEmpty, body != item.title {
-                            Text(body).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(4)
-                        }
-                    }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.card)
-                    .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+                if !seen.isEmpty {
+                    Text("Most watched").font(.headline).foregroundStyle(Color.stoneInk)
+                    list(seen)
                 }
+                if !saved.isEmpty {
+                    Text("Most saved").font(.headline).foregroundStyle(Color.stoneInk)
+                    list(saved)
+                }
+                list(items)
             }
             .padding(20)
         }
@@ -481,12 +477,33 @@ struct DiscoveryListView: View {
         .task { await load() }
     }
 
+    private func list(_ rows: [DiscoveryListItem]) -> some View {
+        ForEach(rows) { item in
+            VStack(alignment: .leading, spacing: 6) {
+                Text(item.title).font(.headline).foregroundStyle(Color.stoneInk)
+                if let subtitle = item.subtitle, !subtitle.isEmpty {
+                    Text(subtitle).font(.caption).foregroundStyle(accent)
+                }
+                if let body = item.body, !body.isEmpty, body != item.title {
+                    Text(body).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(4)
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.card)
+            .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+        }
+    }
+
     private func load() async {
         loading = true
         defer { loading = false }
         do {
-            items = try await client.discoveryList(path: kind.path)
-            message = items.isEmpty ? "Nothing is listed yet." : nil
+            let page = try await client.discoveryList(path: kind.path)
+            items = page.items
+            seen = page.seen
+            saved = page.saved
+            message = items.isEmpty && seen.isEmpty && saved.isEmpty ? "Nothing is listed yet." : nil
         } catch APIError.unauthorized {
             session.signOut()
         } catch APIError.message(let text) {
