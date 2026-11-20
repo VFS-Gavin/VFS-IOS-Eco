@@ -288,6 +288,28 @@ nonisolated struct WelcomeCard: Codable, Equatable, Identifiable {
     var id: String { path }
 }
 
+extension WelcomeHome {
+    func includingLocalTiles() -> WelcomeHome {
+        var next = groups
+        func contains(_ path: String) -> Bool {
+            next.contains { $0.cards.contains { $0.path == path } }
+        }
+        func append(_ id: String, _ title: String, _ card: WelcomeCard) {
+            guard !contains(card.path) else { return }
+            if let index = next.firstIndex(where: { $0.id == id }) {
+                next[index].cards.append(card)
+            } else {
+                next.append(WelcomeGroup(id: id, title: title, cards: [card]))
+            }
+        }
+        append("experience", "Student Experience", WelcomeCard(title: "Social Media", description: "Follow VFS on social platforms", path: "/welcome/social-media"))
+        append("welcome", "Welcome Hub", WelcomeCard(title: "Connect with Industry", description: "Questions about your program, tuition, or student life", path: "/welcome/connect"))
+        append("welcome", "Welcome Hub", WelcomeCard(title: "Download Documents", description: "Access all essential forms and enrollment documents in one place.", path: "/welcome/documents"))
+        append("housing", "Housing Portal", WelcomeCard(title: "Housing Portal", description: "Find safe accommodation near campus", path: "/welcome/housing"))
+        return WelcomeHome(accent: accent, setUpPortfolio: setUpPortfolio, groups: next)
+    }
+}
+
 nonisolated enum WelcomeRoute: Hashable {
     case schoolInfo
     case oDay
@@ -304,6 +326,10 @@ nonisolated enum WelcomeRoute: Hashable {
     case settingUpAccounts
     case financialPlanning
     case announcements
+    case socialMedia
+    case connect
+    case documents
+    case housing
     case programPrep(String)
     case summary(title: String, description: String)
 
@@ -339,6 +365,14 @@ nonisolated enum WelcomeRoute: Hashable {
             self = .financialPlanning
         case "/welcome/student-announcements":
             self = .announcements
+        case "/welcome/social-media":
+            self = .socialMedia
+        case "/welcome/connect":
+            self = .connect
+        case "/welcome/documents":
+            self = .documents
+        case "/welcome/housing":
+            self = .housing
         default:
             self = .summary(title: card.title, description: card.description)
         }
