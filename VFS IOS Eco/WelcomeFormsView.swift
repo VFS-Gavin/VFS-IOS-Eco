@@ -27,7 +27,7 @@ struct WelcomeFormsView: View {
                             .foregroundStyle(Color.stoneMuted)
                         ForEach(group.items) { item in
                             if let link = item.link {
-                                NavigationLink(value: link) {
+                                NavigationLink(value: WelcomeRoute.form(link)) {
                                     formCard(item)
                                 }
                                 .buttonStyle(.plain)

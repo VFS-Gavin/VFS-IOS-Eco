@@ -40,9 +40,9 @@ enum DiscoveryListKind: String, Hashable {
 
 struct FundingView: View {
     @Bindable var session: AppSession
+    var board: String? = nil
     var client: APIClient = APIClient()
     @Environment(\.openURL) private var openURL
-    @State private var section: String?
     @State private var grants: [FundingGrant] = []
     @State private var message: String?
     @State private var loading = false
@@ -51,12 +51,8 @@ struct FundingView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                if let section {
-                    Button("All Funding") { self.section = nil }
-                        .buttonStyle(.plain)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(green)
-                    sectionBody(section)
+                if let board {
+                    sectionBody(board)
                 } else {
                     Text("Fund Your")
                         .font(.system(size: 40, weight: .bold, design: .serif))
@@ -82,7 +78,7 @@ struct FundingView: View {
     }
 
     private var sectionTitle: String {
-        switch section {
+        switch board {
         case "vfs": "Exclusive Funding"
         case "grants": "Grants"
         case "festivals": "Film Festivals"
@@ -202,7 +198,7 @@ struct FundingView: View {
     }
 
     private func pathCard(_ title: String, _ detail: String, key: String, bar: Color) -> some View {
-        Button { section = key } label: {
+        CreativeLink(route: .fundingBoard(key)) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(title).font(.system(size: 28, weight: .bold, design: .serif)).foregroundStyle(Color.stoneInk)
                 Text(detail).font(.subheadline).foregroundStyle(Color.stoneMuted)
