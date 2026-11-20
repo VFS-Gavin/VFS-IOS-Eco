@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 enum ManageTab: String, CaseIterable {
@@ -691,8 +692,23 @@ struct CreateProjectView: View {
     @State private var category = "film_production"
     @State private var published = true
     @State private var professional = false
+    @State private var tags: [String] = []
+    @State private var tagDraft = ""
+    @State private var tools: [String] = []
+    @State private var toolDraft = ""
+    @State private var people: [ProjectCredit] = []
+    @State private var creditName = ""
+    @State private var creditRole = ""
+    @State private var links: [ProjectLinkDraft] = []
+    @State private var linkLabel = ""
+    @State private var linkURL = ""
+    @State private var coverItem: PhotosPickerItem?
+    @State private var coverData: Data?
     @State private var message: String?
     @State private var saving = false
+
+    private let tagPresets = ["Short Film", "Student Film", "Thesis Project", "Demo Reel", "Concept Art", "Character Design", "Storyboard", "Animatic", "Group Project", "Solo Project"]
+    private let toolPresets = ["C#", "C++", "JavaScript", "TypeScript", "Python", "Lua", "HLSL", "GLSL", "PHP", "SQL", "HTML", "CSS"]
 
     var body: some View {
         ScrollView {
@@ -708,6 +724,11 @@ struct CreateProjectView: View {
                     }
                     Text("Other").tag("other")
                 }
+                coverPicker
+                chips("Tags", help: "Freeform topic, skill, or genre tags to help people find this project. Not for term or program affiliation.", presets: tagPresets, selected: tags, draft: $tagDraft) { toggleTag($0) }
+                chips("Tools Used", help: "Programming languages", presets: toolPresets, selected: tools, draft: $toolDraft) { toggleTool($0) }
+                collaborators
+                projectLinks
                 Toggle("Published", isOn: $published)
                 Toggle("Professional Portfolio", isOn: $professional)
                 Text("Mark this project for industry review. Industry accounts with portfolio access can see it on their board. Other students still see your work the same way.")
@@ -733,12 +754,136 @@ struct CreateProjectView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private var coverPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Cover")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.stoneMuted)
+            if let coverData, let image = UIImage(data: coverData) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 160)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+            }
+            PhotosPicker(selection: $coverItem, matching: .images) {
+                Text(coverData == nil ? "Choose Cover" : "Replace Cover")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.ecoOrange)
+            }
+            .onChange(of: coverItem) { _, item in
+                Task {
+                    if let data = try? await item?.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data),
+                       let jpeg = image.jpegData(compressionQuality: 0.9) {
+                        coverData = jpeg
+                    } else {
+                        coverData = nil
+                    }
+                }
+            }
+        }
+    }
+
+    private func chips(_ title: String, help: String, presets: [String], selected: [String], draft: Binding<String>, toggleItem: @escaping (String) -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            Text(help).font(.caption).foregroundStyle(Color.stoneMuted)
+            FlowTags(items: presets, selected: selected, toggle: toggleItem)
+            HStack {
+                TextField("Add a tag...", text: draft)
+                    .textFieldStyle(.roundedBorder)
+                Button("Add") { toggleItem(draft.wrappedValue); draft.wrappedValue = "" }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.ecoOrange)
+            }
+        }
+    }
+
+    private var collaborators: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Collaborators").font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            field("Name", text: $creditName)
+            field("Role (e.g. Animator)", text: $creditRole)
+            Button("Add collaborator") {
+                let name = creditName.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !name.isEmpty else { return }
+                people.append(ProjectCredit(name: name, role: creditRole.trimmingCharacters(in: .whitespacesAndNewlines)))
+                creditName = ""
+                creditRole = ""
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Color.ecoOrange)
+            ForEach(people) { person in
+                HStack {
+                    Text(person.role.isEmpty ? person.name : "\(person.name) · \(person.role)")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.stoneInk)
+                    Spacer()
+                    Button("Remove") { people.removeAll { $0.id == person.id } }
+                        .font(.caption)
+                        .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                }
+            }
+        }
+    }
+
+    private var projectLinks: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Project Links").font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            field("Label", text: $linkLabel)
+            field("https://", text: $linkURL)
+            Button("Add link") {
+                let url = https(linkURL)
+                guard let url else { return }
+                links.append(ProjectLinkDraft(label: linkLabel.trimmingCharacters(in: .whitespacesAndNewlines), url: url))
+                linkLabel = ""
+                linkURL = ""
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Color.ecoOrange)
+            ForEach(links) { link in
+                HStack {
+                    Text(link.label.isEmpty ? link.url : "\(link.label) · \(link.url)")
+                        .font(.caption)
+                        .foregroundStyle(Color.stoneInk)
+                    Spacer()
+                    Button("Remove") { links.removeAll { $0.id == link.id } }
+                        .font(.caption)
+                        .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                }
+            }
+        }
+    }
+
     private func field(_ label: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label).font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
             TextField(label, text: text, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
         }
+    }
+
+    private func toggleTag(_ raw: String) { toggle(&tags, raw) }
+    private func toggleTool(_ raw: String) { toggle(&tools, raw) }
+
+    private func toggle(_ list: inout [String], _ raw: String) {
+        let item = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !item.isEmpty else { return }
+        if let index = list.firstIndex(where: { $0.caseInsensitiveCompare(item) == .orderedSame }) {
+            list.remove(at: index)
+        } else if list.count < 20 {
+            list.append(item)
+        }
+    }
+
+    private func https(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.lowercased().hasPrefix("https://") { return trimmed }
+        if trimmed.lowercased().hasPrefix("http://") { return "https://" + trimmed.dropFirst(7) }
+        return "https://\(trimmed)"
     }
 
     private func save() async {
@@ -753,8 +898,18 @@ struct CreateProjectView: View {
         ]
         let copy = details.trimmingCharacters(in: .whitespacesAndNewlines)
         if !copy.isEmpty { body["description"] = copy }
+        if !tags.isEmpty { body["tags"] = tags }
+        if !tools.isEmpty { body["tools_used"] = tools }
+        let credits = people.map { person -> [String: String] in
+            person.role.isEmpty ? ["name": person.name] : ["name": person.name, "role": person.role]
+        }
+        if !credits.isEmpty { body["collaborators"] = credits }
+        let urls = links.map { link -> [String: String] in
+            link.label.isEmpty ? ["url": link.url] : ["url": link.url, "label": link.label]
+        }
+        if !urls.isEmpty { body["external_links"] = urls }
         do {
-            _ = try await client.createProject(body)
+            _ = try await client.createProject(body, cover: coverData, coverName: "cover.jpg")
             await onSaved()
             dismiss()
         } catch APIError.unauthorized {
@@ -763,6 +918,59 @@ struct CreateProjectView: View {
             message = text
         } catch {
             message = "The project could not be created."
+        }
+    }
+}
+
+private struct ProjectCredit: Identifiable {
+    let id = UUID()
+    var name: String
+    var role: String
+}
+
+private struct ProjectLinkDraft: Identifiable {
+    let id = UUID()
+    var label: String
+    var url: String
+}
+
+private struct FlowTags: View {
+    var items: [String]
+    var selected: [String]
+    var toggle: (String) -> Void
+
+    var body: some View {
+        FlexibleTagWrap(items: items, selected: selected, toggle: toggle)
+    }
+}
+
+private struct FlexibleTagWrap: View {
+    var items: [String]
+    var selected: [String]
+    var toggle: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(rows, id: \.self) { row in
+                HStack(spacing: 8) {
+                    ForEach(row, id: \.self) { item in
+                        let on = selected.contains { $0.caseInsensitiveCompare(item) == .orderedSame }
+                        Button(item) { toggle(item) }
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(on ? Color.ecoOrange : Color.stoneInk)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(on ? Color.ecoOrange.opacity(0.1) : Color.card)
+                            .overlay(Capsule().stroke(on ? Color.ecoOrange : Color.stoneLine, lineWidth: 1))
+                    }
+                }
+            }
+        }
+    }
+
+    private var rows: [[String]] {
+        stride(from: 0, to: items.count, by: 3).map { start in
+            Array(items[start..<min(start + 3, items.count)])
         }
     }
 }
