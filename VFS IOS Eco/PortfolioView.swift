@@ -52,18 +52,7 @@ struct PortfolioScreen: View {
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: CreativeRoute.self) { route in
-                switch route {
-                case .project(let id):
-                    ProjectDetailView(session: session, id: id)
-                case .profile(let slug):
-                    ProfileDetailView(session: session, slug: slug)
-                case .collab(let id):
-                    CollabDetailView(session: session, id: id)
-                case .job(let id):
-                    JobDetailView(session: session, id: id)
-                case .setupProfile:
-                    ProfileSetupView(session: session)
-                }
+                CreativeDestination(session: session, route: route)
             }
             .toolbar {
                 ThemeToggle()

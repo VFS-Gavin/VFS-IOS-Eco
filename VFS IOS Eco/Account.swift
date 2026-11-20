@@ -56,6 +56,14 @@ nonisolated struct CreativeFlags: Codable, Equatable {
     var portfolio: Bool
     var collabs: Bool
     var jobs: Bool
+    var facilities: Bool
+    var funding: Bool
+    var discovery: Bool
+    var workshops: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case portfolio, collabs, jobs, facilities, funding, discovery, workshops
+    }
 
     func allows(_ section: CreativeSection) -> Bool {
         switch section {
@@ -63,6 +71,40 @@ nonisolated struct CreativeFlags: Codable, Equatable {
         case .collabs: collabs
         case .jobs: jobs
         }
+    }
+
+    func isOpen(_ card: CreativeHubKind) -> Bool {
+        switch card {
+        case .portfolio: portfolio
+        case .collabs: collabs
+        case .jobs, .studios: jobs
+        case .facilities: facilities
+        case .funding: funding
+        case .discovery: discovery
+        case .workshops: workshops
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(portfolio, forKey: .portfolio)
+        try container.encode(collabs, forKey: .collabs)
+        try container.encode(jobs, forKey: .jobs)
+        try container.encode(facilities, forKey: .facilities)
+        try container.encode(funding, forKey: .funding)
+        try container.encode(discovery, forKey: .discovery)
+        try container.encode(workshops, forKey: .workshops)
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        portfolio = try container.decodeIfPresent(Bool.self, forKey: .portfolio) ?? true
+        collabs = try container.decodeIfPresent(Bool.self, forKey: .collabs) ?? true
+        jobs = try container.decodeIfPresent(Bool.self, forKey: .jobs) ?? true
+        facilities = try container.decodeIfPresent(Bool.self, forKey: .facilities) ?? true
+        funding = try container.decodeIfPresent(Bool.self, forKey: .funding) ?? false
+        discovery = try container.decodeIfPresent(Bool.self, forKey: .discovery) ?? true
+        workshops = try container.decodeIfPresent(Bool.self, forKey: .workshops) ?? true
     }
 }
 
@@ -94,6 +136,21 @@ enum CreativeRoute: Hashable {
     case collab(Int)
     case job(Int)
     case setupProfile
+    case portfolio
+    case collabs
+    case jobs
+    case area(CreativeHubKind)
+}
+
+enum CreativeHubKind: String, Hashable, CaseIterable {
+    case portfolio
+    case jobs
+    case collabs
+    case workshops
+    case funding
+    case facilities
+    case studios
+    case discovery
 }
 
 nonisolated struct OwnProfile: Codable, Equatable {

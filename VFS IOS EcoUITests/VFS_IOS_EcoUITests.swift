@@ -23,7 +23,7 @@ final class VFS_IOS_EcoUITests: XCTestCase {
         signOutIfNeeded(app)
 
         openDevAccount("alumni", in: app)
-        XCTAssertTrue(app.navigationBars["Portfolio"].waitForExistence(timeout: 45))
+        XCTAssertTrue(app.navigationBars["Creative ECOsystem"].waitForExistence(timeout: 45))
         app.buttons["Sign out"].tap()
 
         openDevAccount("industry", in: app)
