@@ -151,8 +151,16 @@ nonisolated struct APIClient {
         try await submitJSON(path: "/api/creative/profile", method: "PUT", body: body)
     }
 
-    func createProject(_ body: [String: Any]) async throws -> String {
-        try await submitJSON(path: "/api/creative/projects", body: body)
+    func createProject(_ body: [String: Any], cover: Data? = nil, coverName: String = "cover.jpg") async throws -> String {
+        guard let cover else {
+            return try await submitJSON(path: "/api/creative/projects", body: body)
+        }
+        let boundary = "vfs-\(UUID().uuidString)"
+        return try await submit(
+            path: "/api/creative/projects",
+            body: projectForm(body, cover: cover, coverName: coverName, boundary: boundary),
+            contentType: "multipart/form-data; boundary=\(boundary)"
+        )
     }
 
     func toggleProjectPublish(id: Int) async throws -> String {
@@ -425,6 +433,36 @@ nonisolated struct APIClient {
         let (data, response) = try await session.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         return RawResponse(status: status, data: data)
+    }
+
+    private func projectForm(_ body: [String: Any], cover: Data, coverName: String, boundary: String) -> Data {
+        var data = Data()
+        func part(_ name: String, _ value: String) {
+            data.append(Data("--\(boundary)\r\n".utf8))
+            data.append(Data("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".utf8))
+            data.append(Data(value.utf8))
+            data.append(Data("\r\n".utf8))
+        }
+        for (key, value) in body {
+            if let flag = value as? Bool {
+                part(key, flag ? "1" : "0")
+            } else if let text = value as? String {
+                part(key, text)
+            } else if let list = value as? [String] {
+                for item in list { part("\(key)[]", item) }
+            } else if let rows = value as? [[String: String]] {
+                for (index, row) in rows.enumerated() {
+                    for (field, text) in row { part("\(key)[\(index)][\(field)]", text) }
+                }
+            }
+        }
+        data.append(Data("--\(boundary)\r\n".utf8))
+        data.append(Data("Content-Disposition: form-data; name=\"cover_image\"; filename=\"\(coverName)\"\r\n".utf8))
+        data.append(Data("Content-Type: image/jpeg\r\n\r\n".utf8))
+        data.append(cover)
+        data.append(Data("\r\n".utf8))
+        data.append(Data("--\(boundary)--\r\n".utf8))
+        return data
     }
 
     private func multipart(fields: [String: String], files: [FormAttachment], boundary: String) -> Data {
