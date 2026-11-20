@@ -160,7 +160,79 @@ nonisolated struct APIClient {
     }
 
     func updateProject(id: Int, body: [String: Any], cover: Data? = nil, media: [Data] = []) async throws -> String {
-        try await sendProject(path: "/api/creative/projects/\(id)", method: "PUT", body: body, cover: cover, coverName: "cover.jpg", media: media)
+        let method = (cover != nil || !media.isEmpty) ? "POST" : "PUT"
+        return try await sendProject(path: "/api/creative/projects/\(id)", method: method, body: body, cover: cover, coverName: "cover.jpg", media: media)
+    }
+
+    func updateProfileSlug(_ slug: String) async throws -> String {
+        try await submitJSON(path: "/api/creative/profile/slug", method: "PUT", body: ["slug": slug])
+    }
+
+    func uploadProfileFile(path: String, field: String, filename: String, mime: String, data: Data) async throws -> String {
+        let file = FormAttachment(filename: filename, mimeType: mime, data: data)
+        return try await submitMultipart(path: path, fields: [:], files: [file], fileField: field)
+    }
+
+    func deleteProfileFile(path: String) async throws -> String {
+        try await submitJSON(path: path, method: "DELETE", body: [:])
+    }
+
+    func likeProject(id: Int) async throws -> LikeResult {
+        try await postJSON(LikeResult.self, path: "/api/creative/projects/\(id)/like")
+    }
+
+    func commentOnProject(id: Int, body: String) async throws -> ProjectComment {
+        try await postJSON(CommentEnvelope.self, path: "/api/creative/projects/\(id)/comments", body: ["body": body]).comment
+    }
+
+    func deleteComment(id: Int) async throws -> String {
+        try await submitJSON(path: "/api/creative/comments/\(id)", method: "DELETE", body: [:])
+    }
+
+    func applyToJob(id: Int, coverLetter: String) async throws -> String {
+        var body: [String: Any] = [:]
+        let letter = coverLetter.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !letter.isEmpty { body["cover_letter"] = letter }
+        return try await submitJSON(path: "/api/creative/jobs/\(id)/apply", body: body)
+    }
+
+    func bookFacility(id: Int, start: Date, purpose: String, name: String, attendees: Int, guests: Bool) async throws -> String {
+        try await submitJSON(path: "/api/creative/facilities/\(id)/book", body: [
+            "start_time": ISO8601DateFormatter().string(from: start),
+            "purpose": purpose,
+            "booker_name": name,
+            "attendee_count": attendees,
+            "non_vfs_attendees": guests,
+        ])
+    }
+
+    func ambassadors(search: String) async throws -> [AmbassadorCard] {
+        var query: [URLQueryItem] = []
+        let trimmed = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.count >= 2 {
+            query.append(URLQueryItem(name: "search", value: trimmed))
+        }
+        return try await authorized(AmbassadorDirectory.self, path: "/api/welcome/ambassadors", query: query).ambassadors
+    }
+
+    func ambassador(id: Int) async throws -> AmbassadorCard {
+        try await authorized(AmbassadorPage.self, path: "/api/welcome/ambassadors/\(id)").ambassador
+    }
+
+    func startConversation(ambassadorID: Int) async throws -> Int {
+        try await postJSON(ConversationStart.self, path: "/api/welcome/conversations/start", body: ["ambassador_id": ambassadorID]).conversationID
+    }
+
+    func conversations() async throws -> [ChatThread] {
+        try await authorized(ChatIndex.self, path: "/api/welcome/conversations").conversations
+    }
+
+    func conversationMessages(id: Int) async throws -> [ChatLine] {
+        try await authorized(ChatIndex.self, path: "/api/welcome/conversations/\(id)/messages").messages
+    }
+
+    func sendChat(id: Int, body: String) async throws -> ChatLine {
+        try await postJSON(ChatSend.self, path: "/api/welcome/conversations/\(id)/messages", body: ["body": body]).message
     }
 
     private func sendProject(path: String, method: String, body: [String: Any], cover: Data?, coverName: String, media: [Data]) async throws -> String {
@@ -390,6 +462,17 @@ nonisolated struct APIClient {
             query.append(URLQueryItem(name: "search", value: trimmed))
         }
         return query
+    }
+
+    private func postJSON<T: Decodable>(_ type: T.Type, path: String, method: String = "POST", body: [String: Any] = [:]) async throws -> T {
+        let data = try JSONSerialization.data(withJSONObject: body)
+        let response = try await sendData(path: path, method: method, body: data, contentType: "application/json", authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(type, from: response.data)
     }
 
     private func authorized<T: Decodable>(_ type: T.Type, path: String, query: [URLQueryItem] = []) async throws -> T {

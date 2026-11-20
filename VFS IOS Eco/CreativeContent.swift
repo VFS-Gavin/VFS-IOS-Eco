@@ -505,6 +505,10 @@ nonisolated struct OwnSettings: Decodable {
     var mediaTastePublic: Bool
     var pitches: [OwnPitch]
     var showcaseTitles: [String]
+    var slug: String?
+    var avatarURL: String?
+    var portfolioCoverURL: String?
+    var resumeURL: String?
 
     enum CodingKeys: String, CodingKey {
         case headline, pronouns, bio, role, location, website, term, visibility, pitches
@@ -518,6 +522,10 @@ nonisolated struct OwnSettings: Decodable {
         case openToCollab = "open_to_collab"
         case mediaTastePublic = "media_taste_public"
         case showcaseTitles = "showcase_titles"
+        case slug
+        case avatarURL = "avatar_url"
+        case portfolioCoverURL = "portfolio_cover_url"
+        case resumeURL = "resume_url"
     }
 
     init(from decoder: Decoder) throws {
@@ -548,6 +556,10 @@ nonisolated struct OwnSettings: Decodable {
         mediaTastePublic = (try? container.decode(Bool.self, forKey: .mediaTastePublic)) ?? true
         pitches = (try? container.decode([OwnPitch].self, forKey: .pitches)) ?? []
         showcaseTitles = Self.strings(container, .showcaseTitles)
+        slug = try container.decodeIfPresent(String.self, forKey: .slug)
+        avatarURL = try container.decodeIfPresent(String.self, forKey: .avatarURL)
+        portfolioCoverURL = try container.decodeIfPresent(String.self, forKey: .portfolioCoverURL)
+        resumeURL = try container.decodeIfPresent(String.self, forKey: .resumeURL)
     }
 
     private static func strings(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> [String] {
@@ -578,9 +590,9 @@ nonisolated struct ProjectEditor: Decodable {
     var toolsUsed: [String]
     var collaborators: [EditorCredit]
     var externalLinks: [EditorLink]
-    var videoEmbeds: [String]
-    var gameLinks: [String]
-    var modelEmbeds: [String]
+    var videoEmbeds: [SavedEmbed]
+    var gameLinks: [SavedEmbed]
+    var modelEmbeds: [SavedEmbed]
     var coverURL: String?
     var media: [EditorMedia]
 
@@ -607,11 +619,65 @@ nonisolated struct ProjectEditor: Decodable {
         toolsUsed = (try? container.decode([String].self, forKey: .toolsUsed)) ?? []
         collaborators = (try? container.decode([EditorCredit].self, forKey: .collaborators)) ?? []
         externalLinks = (try? container.decode([EditorLink].self, forKey: .externalLinks)) ?? []
-        videoEmbeds = (try? container.decode([String].self, forKey: .videoEmbeds)) ?? []
-        gameLinks = (try? container.decode([String].self, forKey: .gameLinks)) ?? []
-        modelEmbeds = (try? container.decode([String].self, forKey: .modelEmbeds)) ?? []
+        videoEmbeds = (try? container.decode([SavedEmbed].self, forKey: .videoEmbeds)) ?? []
+        gameLinks = (try? container.decode([SavedEmbed].self, forKey: .gameLinks)) ?? []
+        modelEmbeds = (try? container.decode([SavedEmbed].self, forKey: .modelEmbeds)) ?? []
         coverURL = try container.decodeIfPresent(String.self, forKey: .coverURL)
         media = (try? container.decode([EditorMedia].self, forKey: .media)) ?? []
+    }
+}
+
+nonisolated struct SavedEmbed: Decodable, Identifiable, Equatable {
+    var id: Int
+    var url: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, url
+    }
+
+    init(from decoder: Decoder) throws {
+        if let single = try? decoder.singleValueContainer(), let text = try? single.decode(String.self) {
+            id = 0
+            url = text
+            return
+        }
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(Int.self, forKey: .id) ?? 0
+        url = try container.decodeIfPresent(String.self, forKey: .url) ?? ""
+    }
+}
+
+nonisolated struct LikeResult: Decodable {
+    var liked: Bool
+    var likesCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case liked
+        case likesCount = "likes_count"
+    }
+}
+
+nonisolated struct CommentEnvelope: Decodable {
+    var comment: ProjectComment
+}
+
+nonisolated struct ProjectComment: Decodable, Identifiable, Equatable {
+    var id: Int
+    var body: String
+    var userID: Int?
+    var author: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, body, user
+        case userID = "user_id"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        body = try container.decodeIfPresent(String.self, forKey: .body) ?? ""
+        userID = try container.decodeIfPresent(Int.self, forKey: .userID)
+        author = (try? container.decode(ChatPerson.self, forKey: .user))?.name ?? ""
     }
 }
 

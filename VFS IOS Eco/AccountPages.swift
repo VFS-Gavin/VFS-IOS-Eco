@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 enum ManageTab: String, CaseIterable {
     case projects = "My Projects"
@@ -353,6 +354,14 @@ struct OwnProfileView: View {
     @State private var openToCollab = false
     @State private var visibility = "public"
     @State private var mediaTastePublic = true
+    @State private var slug = ""
+    @State private var loadedSlug = ""
+    @State private var avatarURL: String?
+    @State private var coverURL: String?
+    @State private var resumeURL: String?
+    @State private var avatarItem: PhotosPickerItem?
+    @State private var coverItem: PhotosPickerItem?
+    @State private var pickingResume = false
 
     var body: some View {
         ScrollView {
@@ -389,10 +398,64 @@ struct OwnProfileView: View {
         .navigationTitle(showcase ? "My Showcase" : "Profile Settings")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
+        .fileImporter(isPresented: $pickingResume, allowedContentTypes: Self.resumeTypes) { result in
+            Task { await uploadResume(result) }
+        }
+    }
+
+    private static var resumeTypes: [UTType] {
+        var types: [UTType] = [.pdf]
+        if let doc = UTType(filenameExtension: "doc") { types.append(doc) }
+        if let docx = UTType(filenameExtension: "docx") { types.append(docx) }
+        return types
     }
 
     private func settingsEditor() -> some View {
         VStack(alignment: .leading, spacing: 16) {
+            block("Photo, Cover, and Resume") {
+                if let avatarURL, let url = AccountMedia.url(avatarURL) {
+                    AsyncImage(url: url) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        Color.stoneLine
+                    }
+                    .frame(width: 72, height: 72)
+                    .clipShape(Circle())
+                }
+                PhotosPicker(selection: $avatarItem, matching: .images) {
+                    Text("Profile photo").font(.subheadline.weight(.semibold)).foregroundStyle(Color.ecoOrange)
+                }
+                .onChange(of: avatarItem) { _, item in
+                    Task { await uploadImage(item, path: "/api/creative/profile/avatar", field: "photo", filename: "photo.jpg") }
+                }
+                if avatarURL != nil {
+                    Button("Remove photo") { Task { await removeFile("/api/creative/profile/avatar") { avatarURL = nil } } }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                }
+                PhotosPicker(selection: $coverItem, matching: .images) {
+                    Text("Portfolio cover").font(.subheadline.weight(.semibold)).foregroundStyle(Color.ecoOrange)
+                }
+                .onChange(of: coverItem) { _, item in
+                    Task { await uploadImage(item, path: "/api/creative/profile/cover", field: "cover", filename: "cover.jpg") }
+                }
+                if coverURL != nil {
+                    Button("Remove cover") { Task { await removeFile("/api/creative/profile/cover") { coverURL = nil } } }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                }
+                Button("Resume") { pickingResume = true }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.ecoOrange)
+                if let resumeURL, let url = AccountMedia.url(resumeURL) {
+                    Button("Open resume") { openURL(url) }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.ecoOrange)
+                    Button("Remove resume") { Task { await removeFile("/api/creative/profile/resume") { self.resumeURL = nil } } }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                }
+            }
             block("About You") {
                 editorField("Display Name", text: $displayName)
                 editorField("Headline", text: $headline)
@@ -428,6 +491,7 @@ struct OwnProfileView: View {
                 Toggle("Open to collab", isOn: $openToCollab)
             }
             block("Privacy & URL") {
+                editorField("Profile URL", text: $slug)
                 Picker("Visibility", selection: $visibility) {
                     Text("Public").tag("public")
                     Text("Private").tag("private")
@@ -578,6 +642,9 @@ struct OwnProfileView: View {
         do {
             let page = try await client.ownProfile()
             settings = page
+            avatarURL = page.avatarURL
+            coverURL = page.portfolioCoverURL
+            resumeURL = page.resumeURL
             message = nil
             if !filled { fill(page) }
         } catch APIError.unauthorized {
@@ -609,6 +676,8 @@ struct OwnProfileView: View {
         openToCollab = page.openToCollab
         visibility = page.visibility
         mediaTastePublic = page.mediaTastePublic
+        slug = page.slug ?? ""
+        loadedSlug = page.slug ?? ""
         filled = true
     }
 
@@ -619,6 +688,10 @@ struct OwnProfileView: View {
         defer { saving = false }
         do {
             notice = try await client.saveProfile(payload())
+            let next = slug.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !next.isEmpty, next != loadedSlug {
+                notice = try await client.updateProfileSlug(next)
+            }
             await session.refresh()
             filled = false
             await load()
@@ -628,6 +701,57 @@ struct OwnProfileView: View {
             message = text
         } catch {
             message = "The profile could not be saved."
+        }
+    }
+
+    private func uploadImage(_ item: PhotosPickerItem?, path: String, field: String, filename: String) async {
+        guard let item,
+              let data = try? await item.loadTransferable(type: Data.self),
+              let image = UIImage(data: data),
+              let jpeg = image.jpegData(compressionQuality: 0.85) else { return }
+        do {
+            notice = try await client.uploadProfileFile(path: path, field: field, filename: filename, mime: "image/jpeg", data: jpeg)
+            filled = true
+            await load()
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "The file could not be uploaded."
+        }
+    }
+
+    private func uploadResume(_ result: Result<URL, Error>) async {
+        guard case .success(let url) = result else { return }
+        let access = url.startAccessingSecurityScopedResource()
+        defer { if access { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url) else { return }
+        let name = url.lastPathComponent
+        let mime = name.lowercased().hasSuffix(".pdf") ? "application/pdf" : "application/octet-stream"
+        do {
+            notice = try await client.uploadProfileFile(path: "/api/creative/profile/resume", field: "resume", filename: name, mime: mime, data: data)
+            filled = true
+            await load()
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "The resume could not be uploaded."
+        }
+    }
+
+    private func removeFile(_ path: String, clear: () -> Void) async {
+        do {
+            notice = try await client.deleteProfileFile(path: path)
+            clear()
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "The file could not be removed."
         }
     }
 
@@ -715,13 +839,13 @@ struct CreateProjectView: View {
     @State private var mediaItems: [PhotosPickerItem] = []
     @State private var mediaData: [Data] = []
     @State private var embeds: [String] = []
-    @State private var savedEmbeds: [String] = []
+    @State private var savedEmbeds: [SavedEmbed] = []
     @State private var embedDraft = ""
     @State private var gameLinks: [String] = []
-    @State private var savedGames: [String] = []
+    @State private var savedGames: [SavedEmbed] = []
     @State private var gameDraft = ""
     @State private var models: [String] = []
-    @State private var savedModels: [String] = []
+    @State private var savedModels: [SavedEmbed] = []
     @State private var modelDraft = ""
     @State private var existingMedia: [EditorMedia] = []
     @State private var removedMedia: [Int] = []
@@ -764,9 +888,9 @@ struct CreateProjectView: View {
                     }
                 }
                 galleryPicker
-                urlList("YouTube / Vimeo", placeholder: "YouTube or Vimeo URL...", saved: savedEmbeds, items: embeds, draft: $embedDraft, add: addEmbed)
-                urlList("Game Link", placeholder: "https://yourgame.itch.io/... or Steam / Epic Games Store link", saved: savedGames, items: gameLinks, draft: $gameDraft, add: addGame)
-                urlList("3D Viewer", placeholder: "Sketchfab model page or skfb.ly link", saved: savedModels, items: models, draft: $modelDraft, add: addModel)
+                urlList("YouTube / Vimeo", placeholder: "YouTube or Vimeo URL...", saved: savedEmbeds, items: embeds, draft: $embedDraft, add: addEmbed, removeSaved: dropEmbed)
+                urlList("Game Link", placeholder: "https://yourgame.itch.io/... or Steam / Epic Games Store link", saved: savedGames, items: gameLinks, draft: $gameDraft, add: addGame, removeSaved: dropGame)
+                urlList("3D Viewer", placeholder: "Sketchfab model page or skfb.ly link", saved: savedModels, items: models, draft: $modelDraft, add: addModel, removeSaved: dropModel)
                 chips("Tags", help: "Freeform topic, skill, or genre tags to help people find this project. Not for term or program affiliation.", presets: tagPresets, selected: tags, draft: $tagDraft) { toggleTag($0) }
                 chips("Tools Used", help: "Programming languages", presets: toolPresets, selected: tools, draft: $toolDraft) { toggleTool($0) }
                 collaborators
@@ -899,7 +1023,7 @@ struct CreateProjectView: View {
         }
     }
 
-    private func urlList(_ title: String, placeholder: String, saved: [String] = [], items: [String], draft: Binding<String>, add: @escaping () -> Void) -> some View {
+    private func urlList(_ title: String, placeholder: String, saved: [SavedEmbed], items: [String], draft: Binding<String>, add: @escaping () -> Void, removeSaved: @escaping (SavedEmbed) -> Void) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title).font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
             HStack {
@@ -911,8 +1035,14 @@ struct CreateProjectView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.ecoOrange)
             }
-            ForEach(saved, id: \.self) { item in
-                Text(item).font(.caption).foregroundStyle(Color.stoneMuted).lineLimit(1)
+            ForEach(saved) { item in
+                HStack {
+                    Text(item.url).font(.caption).foregroundStyle(Color.stoneMuted).lineLimit(1)
+                    Spacer()
+                    Button("Remove") { removeSaved(item) }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                }
             }
             ForEach(items, id: \.self) { item in
                 Text(item).font(.caption).foregroundStyle(Color.stoneInk).lineLimit(1)
@@ -920,12 +1050,21 @@ struct CreateProjectView: View {
         }
     }
 
+    private func dropEmbed(_ item: SavedEmbed) { drop(item, from: &savedEmbeds) }
+    private func dropGame(_ item: SavedEmbed) { drop(item, from: &savedGames) }
+    private func dropModel(_ item: SavedEmbed) { drop(item, from: &savedModels) }
+
+    private func drop(_ item: SavedEmbed, from list: inout [SavedEmbed]) {
+        list.removeAll { $0.id == item.id && $0.url == item.url }
+        if item.id > 0 { removedMedia.append(item.id) }
+    }
+
     private func addEmbed() { push(&embeds, embedDraft, saved: savedEmbeds) { embedDraft = "" } }
     private func addGame() { push(&gameLinks, gameDraft, saved: savedGames) { gameDraft = "" } }
     private func addModel() { push(&models, modelDraft, saved: savedModels) { modelDraft = "" } }
 
-    private func push(_ list: inout [String], _ raw: String, saved: [String] = [], clear: () -> Void) {
-        guard let url = https(raw), list.count + saved.count < 10, !list.contains(url), !saved.contains(url) else { return }
+    private func push(_ list: inout [String], _ raw: String, saved: [SavedEmbed] = [], clear: () -> Void) {
+        guard let url = https(raw), list.count + saved.count < 10, !list.contains(url), !saved.contains(where: { $0.url == url }) else { return }
         list.append(url)
         clear()
     }

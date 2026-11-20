@@ -59,6 +59,8 @@ enum HubEmoji {
         case "/welcome/social-media": "📱"
         case "/welcome/connect": "🤝"
         case "/welcome/documents": "📘"
+        case "/students/ambassadors": "🎓"
+        case "/students/chat": "💬"
         default: "📄"
         }
     }

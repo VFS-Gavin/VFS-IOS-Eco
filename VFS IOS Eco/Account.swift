@@ -308,10 +308,12 @@ extension WelcomeHome {
                 next.append(WelcomeGroup(id: id, title: title, cards: [card]))
             }
         }
-        append("experience", "Student Experience", WelcomeCard(title: "Social Media", description: "Follow VFS on social platforms", path: "/welcome/social-media"))
+        append("experience", "Student Experience", WelcomeCard(title: "Social Media", description: "Follow VFS on all platforms.", path: "/welcome/social-media"))
         append("welcome", "Welcome Hub", WelcomeCard(title: "Connect with Industry", description: "Questions about your program, tuition, or student life", path: "/welcome/connect"))
         append("welcome", "Welcome Hub", WelcomeCard(title: "Download Documents", description: "Access all essential forms and enrollment documents in one place.", path: "/welcome/documents"))
-        append("housing", "Housing Portal", WelcomeCard(title: "Housing Portal", description: "Find safe accommodation near campus", path: "/welcome/housing"))
+        append("welcome", "Welcome Hub", WelcomeCard(title: "Housing Portal", description: "Find safe accommodation near campus.", path: "/welcome/housing"))
+        append("welcome", "Welcome Hub", WelcomeCard(title: "Ambassador Directory", description: "Connect with experienced VFS ambassadors", path: "/students/ambassadors"))
+        append("welcome", "Welcome Hub", WelcomeCard(title: "Messages", description: "Chat with ambassadors and students", path: "/students/chat"))
         return WelcomeHome(accent: accent, setUpPortfolio: setUpPortfolio, groups: next)
     }
 }
@@ -341,6 +343,10 @@ nonisolated enum WelcomeRoute: Hashable {
     case housingLandlord
     case housingSeeking
     case housingProperty(Int)
+    case ambassadors
+    case ambassador(Int)
+    case messages
+    case conversation(Int)
     case form(WelcomeFormLink)
     case programPrep(String)
     case summary(title: String, description: String)
@@ -385,6 +391,10 @@ nonisolated enum WelcomeRoute: Hashable {
             self = .documents
         case "/welcome/housing":
             self = .housing
+        case "/students/ambassadors":
+            self = .ambassadors
+        case "/students/chat":
+            self = .messages
         default:
             self = .summary(title: card.title, description: card.description)
         }
