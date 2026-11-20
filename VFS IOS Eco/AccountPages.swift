@@ -67,6 +67,10 @@ struct ManagePortfolioView: View {
         .navigationTitle("Manage Portfolio")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
+        .onAppear {
+            guard board != nil else { return }
+            Task { await load() }
+        }
         .confirmationDialog("Delete this project?", isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }), titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 if let project = pendingDelete { Task { await remove(project) } }
@@ -79,9 +83,7 @@ struct ManagePortfolioView: View {
 
     @ViewBuilder
     private func projects(_ rows: [ManagedProject]) -> some View {
-        NavigationLink {
-            CreateProjectView(session: session) { await load() }
-        } label: {
+        NavigationLink(value: CreativeRoute.createProject) {
             Text("Create New Project")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.white)
@@ -108,9 +110,7 @@ struct ManagePortfolioView: View {
                     }
                     .buttonStyle(.plain)
                     HStack(spacing: 8) {
-                        NavigationLink {
-                            CreateProjectView(session: session, projectID: project.id) { await load() }
-                        } label: {
+                        NavigationLink(value: CreativeRoute.editProject(project.id)) {
                             Text("Edit")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(Color.ecoOrange)

@@ -424,10 +424,34 @@ struct WelcomeHubView: View {
                     DocumentsView()
                 case .housing:
                     HousingHubView(session: session)
+                case .housingListings:
+                    HousingListingsView(session: session)
+                case .housingStudents:
+                    HousingStudentsView(session: session)
+                case .housingLandlord:
+                    LandlordListingView(session: session)
+                case .housingSeeking:
+                    HousingSeekingView(session: session)
+                case .housingProperty(let id):
+                    HousingListingDetailView(session: session, id: id)
                 case .programPrep(let slug):
                     ProgramPrepView(slug: slug)
                 case .summary(let title, let description):
                     PageSummaryView(title: title, description: description)
+                }
+            }
+            .navigationDestination(for: WelcomeFormLink.self) { link in
+                switch link {
+                case .survey:
+                    QuestionnaireFormView(session: session)
+                case .parentConsent:
+                    ParentConsentFormView(session: session)
+                case .contact:
+                    ContactUpdateFormView(session: session)
+                case .confidential:
+                    ConfidentialFormView(session: session)
+                case .t2202:
+                    T2202FormView(session: session)
                 }
             }
             .toolbar {

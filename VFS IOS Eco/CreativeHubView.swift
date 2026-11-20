@@ -284,6 +284,14 @@ struct CreativeDestination: View {
             WorkshopCategoryView(session: session, slug: slug)
         case .discoveryList(let kind):
             DiscoveryListView(session: session, kind: kind)
+        case .createProject:
+            CreateProjectView(session: session) {}
+        case .editProject(let id):
+            CreateProjectView(session: session, projectID: id) {}
+        case .studio(let id):
+            if let project = StudioCatalog.projects.first(where: { $0.id == id }) {
+                StudioDetailView(project: project)
+            }
         case .account(let area):
             switch area {
             case .documentRequests:
