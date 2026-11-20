@@ -215,3 +215,152 @@ nonisolated struct CalendarItem: Decodable, Identifiable, Equatable {
         case imageURL = "image_url"
     }
 }
+
+nonisolated struct FundingBoard: Decodable {
+    var grants: [FundingGrant]
+    var challengeGrantID: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case grants
+        case challengeGrantID = "challenge_grant_id"
+    }
+}
+
+nonisolated struct FundingGrant: Decodable, Identifiable, Equatable {
+    var id: Int
+    var name: String
+    var amount: String?
+    var section: String?
+    var deadline: String?
+    var status: String?
+    var description: String?
+    var longDescription: String?
+    var externalURL: String?
+    var isFeatured: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, amount, section, deadline, status, description
+        case longDescription = "long_description"
+        case externalURL = "external_url"
+        case isFeatured = "is_featured"
+    }
+}
+
+nonisolated struct WorkshopCategoryPage: Decodable {
+    var label: String
+    var courses: [WorkshopCourse]
+    var events: [WorkshopEvent]
+
+    enum CodingKeys: String, CodingKey {
+        case label, courses, events
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
+        courses = try container.decodeIfPresent([WorkshopCourse].self, forKey: .courses) ?? []
+        events = try container.decodeIfPresent([WorkshopEvent].self, forKey: .events) ?? []
+    }
+}
+
+nonisolated struct WorkshopCourse: Decodable, Identifiable, Equatable {
+    var slug: String
+    var name: String
+    var dates: String?
+    var summary: String?
+    var badge: String?
+    var url: String?
+    var signupURL: String?
+
+    var id: String { slug }
+
+    enum CodingKeys: String, CodingKey {
+        case slug, name, dates, summary, badge, url
+        case signupURL = "signup_url"
+    }
+}
+
+nonisolated struct WorkshopEvent: Decodable, Identifiable, Equatable {
+    var title: String
+    var dates: String?
+    var location: String?
+    var description: String?
+    var url: String?
+
+    var id: String { title }
+}
+
+nonisolated struct DiscoveryListItem: Decodable, Identifiable, Equatable {
+    var id: String
+    var title: String
+    var subtitle: String?
+    var body: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, text, name, review, description, category, likes, rating
+        case creator, user
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let text = try? container.decode(String.self, forKey: .id) {
+            id = text
+        } else if let number = try? container.decode(Int.self, forKey: .id) {
+            id = String(number)
+        } else {
+            id = UUID().uuidString
+        }
+        let text = try container.decodeIfPresent(String.self, forKey: .text)
+        let named = try container.decodeIfPresent(String.self, forKey: .name)
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? text ?? named ?? "Untitled"
+        let review = try container.decodeIfPresent(String.self, forKey: .review)
+        let description = try container.decodeIfPresent(String.self, forKey: .description)
+        body = review ?? description
+        let creator = try container.decodeIfPresent(DiscoveryPerson.self, forKey: .creator)
+        let user = try container.decodeIfPresent(DiscoveryPerson.self, forKey: .user)
+        let category = try container.decodeIfPresent(String.self, forKey: .category)
+        let likes = Self.wholeNumber(container, .likes)
+        let rating = Self.wholeNumber(container, .rating)
+        var bits: [String] = []
+        if let name = creator?.name ?? user?.name, !name.isEmpty { bits.append(name) }
+        if let category, !category.isEmpty { bits.append(category) }
+        if let likes { bits.append("\(likes) likes") }
+        if let rating { bits.append("\(rating)/10") }
+        subtitle = bits.isEmpty ? nil : bits.joined(separator: " · ")
+    }
+
+    private static func wholeNumber(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
+        if let number = try? container.decode(Int.self, forKey: key) { return number }
+        if let number = try? container.decode(Double.self, forKey: key) { return Int(number) }
+        return nil
+    }
+}
+
+nonisolated struct DiscoveryPerson: Decodable, Equatable {
+    var name: String?
+}
+
+nonisolated struct DiscoveryListResponse: Decodable {
+    var items: [DiscoveryListItem]
+
+    enum CodingKeys: String, CodingKey {
+        case pitches, trending, reviews, items, challenges, rankings, taste
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let pitches = try container.decodeIfPresent([DiscoveryListItem].self, forKey: .pitches) {
+            items = pitches
+        } else if let reviews = try container.decodeIfPresent([DiscoveryListItem].self, forKey: .reviews) {
+            items = reviews
+        } else if let challenges = try container.decodeIfPresent([DiscoveryListItem].self, forKey: .challenges) {
+            items = challenges
+        } else if let rankings = try container.decodeIfPresent([DiscoveryListItem].self, forKey: .rankings) {
+            items = rankings
+        } else if let taste = try container.decodeIfPresent([DiscoveryListItem].self, forKey: .taste) {
+            items = taste
+        } else {
+            items = try container.decodeIfPresent([DiscoveryListItem].self, forKey: .items) ?? []
+        }
+    }
+}

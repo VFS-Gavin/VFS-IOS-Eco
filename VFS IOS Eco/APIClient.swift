@@ -211,6 +211,19 @@ nonisolated struct APIClient {
         return try await authorized(CollabBoard.self, path: "/api/creative/collabs", query: query)
     }
 
+    func funding() async throws -> FundingBoard {
+        try await catalog(FundingBoard.self, path: "/api/creative/funding", missing: "The funding list isn't available from the app yet.")
+    }
+
+    func workshopCategory(_ slug: String) async throws -> WorkshopCategoryPage {
+        let safe = slug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? slug
+        return try await catalog(WorkshopCategoryPage.self, path: "/api/creative/workshops/\(safe)", missing: "This workshop list isn't available from the app yet.")
+    }
+
+    func discoveryList(path: String) async throws -> [DiscoveryListItem] {
+        try await catalog(DiscoveryListResponse.self, path: path, missing: "This Creative Engine list isn't available from the app yet.").items
+    }
+
     func calendar() async throws -> [CalendarItem] {
         let response = try await send(path: "/api/creative/calendar", method: "GET", body: nil, authorize: true)
         if response.status == 401 {
@@ -268,6 +281,19 @@ nonisolated struct APIClient {
 
     func job(id: Int) async throws -> JobCard {
         try await authorized(JobDetailResponse.self, path: "/api/creative/jobs/\(id)").job
+    }
+
+    private func catalog<T: Decodable>(_ type: T.Type, path: String, missing: String) async throws -> T {
+        let response = try await send(path: path, method: "GET", body: nil, authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        if response.status == 404 {
+            throw APIError.message(missing)
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(T.self, from: response.data)
     }
 
     private func pageQuery(search: String, page: Int) -> [URLQueryItem] {

@@ -165,6 +165,8 @@ enum CreativeRoute: Hashable {
     case jobs
     case area(CreativeHubKind)
     case account(AccountArea)
+    case workshopCategory(String)
+    case discoveryList(DiscoveryListKind)
 }
 
 enum AccountArea: String, Hashable {
