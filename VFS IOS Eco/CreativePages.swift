@@ -124,10 +124,30 @@ struct DiscoveryView: View {
                 ForEach(hits) { hit in
                     discoveryRow(hit)
                 }
-                discoveryCard("Write an elevator pitch", "One sentence for the concept, then a fuller write-up if you want. Posted on the pitches page, not by searching a title.")
-                discoveryCard("Build your Top 5", "The films, games, books, and people that shaped you, with a note on why each one matters.")
-                discoveryCard("Rate what you've seen", "Search the title above, open it, then rate, review, or add it to your catalogue.")
-                discoveryCard("Find people", "Search @classmates, or look up directors and actors. Follow taste that matches yours, and find collaborators from pitches.")
+                NavigationLink(value: CreativeRoute.discoveryList(.pitches)) {
+                    discoveryCard("Write an elevator pitch", "One sentence for the concept, then a fuller write-up if you want. Posted on the pitches page, not by searching a title.", cue: "Open pitches")
+                }
+                .buttonStyle(.plain)
+                NavigationLink(value: CreativeRoute.discoveryList(.top5)) {
+                    discoveryCard("Build your Top 5", "The films, games, books, and people that shaped you, with a note on why each one matters.", cue: "Your Top 5")
+                }
+                .buttonStyle(.plain)
+                discoveryCard("Rate what you've seen", "Search the title above, open it, then rate, review, or add it to your catalogue.", cue: "Focus search")
+                Button {
+                    type = "person"
+                } label: {
+                    discoveryCard("Find people", "Search @classmates, or look up directors and actors. Follow taste that matches yours, and find collaborators from pitches.", cue: "Search people")
+                }
+                .buttonStyle(.plain)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        browseLink("Elevator Pitches", .pitches)
+                        browseLink("Top 5 Rankings", .top5)
+                        browseLink("Creator Reviews", .reviews)
+                        browseLink("Community Taste", .taste)
+                        browseLink("Weekly Challenges", .challenges)
+                    }
+                }
                 SiteFooter(session: session)
             }
             .padding(20)
@@ -169,10 +189,23 @@ struct DiscoveryView: View {
         .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
     }
 
-    private func discoveryCard(_ title: String, _ detail: String) -> some View {
+    private func browseLink(_ title: String, _ kind: DiscoveryListKind) -> some View {
+        NavigationLink(value: CreativeRoute.discoveryList(kind)) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(accent)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(accent.opacity(0.45), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func discoveryCard(_ title: String, _ detail: String, cue: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Color.stoneInk)
             Text(detail).font(.caption).foregroundStyle(Color.stoneMuted)
+            Text(cue).font(.caption.weight(.bold)).foregroundStyle(accent)
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)

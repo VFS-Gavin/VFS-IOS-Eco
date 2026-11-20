@@ -426,6 +426,16 @@ struct CollabDetailView: View {
                     Text(message).foregroundStyle(Color.stoneInk)
                 case .ready:
                     if let collab {
+                        if let url = PortfolioProject.coverURL(collab.coverURL) {
+                            AsyncImage(url: url) { image in
+                                image.resizable().scaledToFill()
+                            } placeholder: {
+                                Color.stoneLine
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 200)
+                            .clipped()
+                        }
                         Text(collab.title)
                             .font(.system(size: 40, weight: .bold, design: .serif))
                             .foregroundStyle(Color.stoneInk)

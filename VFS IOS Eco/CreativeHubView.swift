@@ -273,9 +273,17 @@ struct CreativeDestination: View {
                 FacilitiesView(session: session)
             case .studios:
                 StudiosView()
+            case .workshops:
+                WorkshopsView(session: session)
+            case .funding:
+                FundingView(session: session)
             default:
                 CreativeAreaView(kind: kind)
             }
+        case .workshopCategory(let slug):
+            WorkshopCategoryView(session: session, slug: slug)
+        case .discoveryList(let kind):
+            DiscoveryListView(session: session, kind: kind)
         case .account(let area):
             AccountAreaView(area: area)
         }
