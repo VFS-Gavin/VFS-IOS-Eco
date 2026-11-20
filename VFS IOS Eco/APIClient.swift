@@ -94,6 +94,20 @@ nonisolated struct APIClient {
         return try JSONDecoder().decode(TermsDocument.self, from: response.data)
     }
 
+    func saveProfile(_ draft: ProfileDraft) async throws -> Account {
+        let response = try await sendData(
+            path: "/api/creative/profile",
+            method: "POST",
+            body: try JSONSerialization.data(withJSONObject: draft.payload()),
+            contentType: "application/json",
+            authorize: true
+        )
+        if response.status == 404 {
+            throw APIError.message("Profile setup isn't available from the app yet.")
+        }
+        return try account(from: response)
+    }
+
     func logout() async {
         _ = try? await send(path: "/api/auth/logout", method: "POST", body: [:], authorize: true)
     }

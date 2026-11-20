@@ -8,6 +8,7 @@ nonisolated struct Account: Codable, Equatable {
     var user: AccountUser
     var industry: IndustryFlags?
     var sections: CreativeFlags?
+    var profile: OwnProfile?
     var terms: TermsStatus?
 
     enum CodingKeys: String, CodingKey {
@@ -18,7 +19,12 @@ nonisolated struct Account: Codable, Equatable {
         case user
         case industry
         case sections
+        case profile
         case terms
+    }
+
+    var canCreateProfile: Bool {
+        creative == "full" && profile == nil && user.blockedFromCreativeWrites != true
     }
 
     var needsTerms: Bool {
@@ -87,6 +93,11 @@ enum CreativeRoute: Hashable {
     case profile(String)
     case collab(Int)
     case job(Int)
+    case setupProfile
+}
+
+nonisolated struct OwnProfile: Codable, Equatable {
+    var slug: String
 }
 
 nonisolated struct TermsStatus: Codable, Equatable {
@@ -133,6 +144,12 @@ nonisolated struct AccountUser: Codable, Equatable {
     var name: String
     var email: String
     var role: String
+    var blockedFromCreativeWrites: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, email, role
+        case blockedFromCreativeWrites = "blocked_from_creative_writes"
+    }
 }
 
 nonisolated struct WelcomeHome: Codable, Equatable {
