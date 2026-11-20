@@ -58,6 +58,7 @@ enum CreativeHubCatalog {
 
     static func isOpen(_ kind: CreativeHubKind, account: Account?) -> Bool {
         guard let account else { return false }
+        if account.user.role == "admin" { return true }
         if let sections = account.sections {
             return sections.isOpen(kind)
         }

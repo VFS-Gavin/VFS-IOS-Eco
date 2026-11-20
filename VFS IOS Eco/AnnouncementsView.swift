@@ -15,7 +15,7 @@ struct WelcomeAlerts: View {
     }
 
     private func load() async {
-        guard session.account?.welcomeHub == true else { return }
+        guard session.account?.showsWelcomeHub == true else { return }
         do {
             items = try await client.welcomeAnnouncements().notifications
         } catch APIError.unauthorized {

@@ -60,12 +60,12 @@ struct RootScreen: View {
     @ViewBuilder
     private var signedIn: some View {
         ZStack {
-            if session.account?.welcomeHub == true {
+            if let account = session.account, account.showsWelcomeHub, account.showsCreative {
                 PortalTabs(session: session)
-            } else if session.account?.home == "portfolio" {
-                CreativeHubScreen(session: session, industry: false)
+            } else if session.account?.showsWelcomeHub == true {
+                WelcomeHubView(session: session)
             } else {
-                CreativeHubScreen(session: session, industry: true)
+                CreativeHubScreen(session: session, industry: session.account?.creativeIsIndustry == true)
             }
             if session.account?.needsTerms == true {
                 TermsGateView(session: session)
@@ -290,7 +290,7 @@ struct WelcomeHubView: View {
 
                     WelcomeAlerts(session: session)
 
-                    if query.isEmpty && (session.welcome?.setUpPortfolio == true || session.account?.setUpPortfolio == true) {
+                    if query.isEmpty && session.account?.showsCreative == true && (session.welcome?.setUpPortfolio == true || session.account?.setUpPortfolio == true) {
                         Button(action: openCreative) {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Creative ECOsystem")
