@@ -61,6 +61,8 @@ struct PortfolioScreen: View {
                     CollabDetailView(session: session, id: id)
                 case .job(let id):
                     JobDetailView(session: session, id: id)
+                case .setupProfile:
+                    ProfileSetupView(session: session)
                 }
             }
             .toolbar {
@@ -130,6 +132,30 @@ struct PortfolioView: View {
                     accentColor: .ecoOrange,
                     detail: "Work from across VFS, students and alumni alike."
                 )
+
+                if session.account?.canCreateProfile == true {
+                    NavigationLink(value: CreativeRoute.setupProfile) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("YOUR PORTFOLIO")
+                                .font(.system(size: 11, weight: .medium))
+                                .tracking(1.6)
+                                .foregroundStyle(Color.ecoOrange)
+                            Text("Create your profile")
+                                .font(.system(size: 22, weight: .bold, design: .serif))
+                                .foregroundStyle(Color.stoneInk)
+                            Text("Add your name, headline, and program so other students and alumni can find you.")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.stoneMuted)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.card)
+                        .overlay(alignment: .leading) { Rectangle().fill(Color.ecoOrange).frame(width: 3) }
+                        .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("create-profile")
+                }
 
                 CreativeSearchField(placeholder: "Search projects or creators…", text: $search, identifier: "portfolio-search") {
                     Task { await reload() }

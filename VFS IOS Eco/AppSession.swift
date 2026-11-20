@@ -106,6 +106,24 @@ final class AppSession {
         isBusy = false
     }
 
+    func saveProfile(_ draft: ProfileDraft) async -> String? {
+        isBusy = true
+        statusMessage = nil
+        do {
+            account = try await client.saveProfile(draft)
+            cache(account)
+            await loadWelcomeIfNeeded()
+            isBusy = false
+            return account?.profile?.slug
+        } catch let error as APIError {
+            statusMessage = text(for: error)
+        } catch {
+            statusMessage = "Could not save your profile. Please try again."
+        }
+        isBusy = false
+        return nil
+    }
+
     func refresh() async {
         guard phase == .signedIn else { return }
         guard let account = try? await client.me() else { return }

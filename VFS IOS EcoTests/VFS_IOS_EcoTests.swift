@@ -344,5 +344,14 @@ final class VFS_IOS_EcoTests: XCTestCase {
         """.data(using: .utf8)!
         let student = try JSONDecoder().decode(Account.self, from: flagged)
         XCTAssertEqual(student.creativeSections, [.portfolio, .jobs])
+        XCTAssertTrue(student.canCreateProfile)
+
+        let created = """
+        {"home":"welcome","welcome_hub":true,"creative":"full","set_up_portfolio":false,"user":{"id":4,"name":"Ada","email":"ada@vfs.edu","role":"student","blocked_from_creative_writes":false},"profile":{"slug":"ada"}}
+        """.data(using: .utf8)!
+        let withProfile = try JSONDecoder().decode(Account.self, from: created)
+        XCTAssertEqual(withProfile.profile?.slug, "ada")
+        XCTAssertFalse(withProfile.canCreateProfile)
+        XCTAssertEqual(ProfileDraft(headline: "Editor", skills: "Editing, Sound").skillList, ["Editing", "Sound"])
     }
 }
