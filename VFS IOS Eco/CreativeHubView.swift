@@ -337,6 +337,16 @@ struct CreativeDestination: View {
             if let project = StudioCatalog.projects.first(where: { $0.id == id }) {
                 StudioDetailView(project: project)
             }
+        case .discoveryTitle(let type, let externalID):
+            DiscoveryTitleView(session: session, type: type, externalID: externalID)
+        case .tasteEditor:
+            TasteEditorView(session: session)
+        case .createCollab:
+            CollabCreateView(session: session)
+        case .grantApply(let id):
+            GrantApplyView(session: session, grantID: id)
+        case .editPitches:
+            PitchEditorView(session: session)
         case .account(let area):
             switch area {
             case .documentRequests:

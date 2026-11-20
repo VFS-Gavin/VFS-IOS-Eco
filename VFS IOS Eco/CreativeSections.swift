@@ -162,6 +162,14 @@ struct FundingView: View {
                     if let deadline = grant.deadline, !deadline.isEmpty {
                         Text(deadline).font(.caption).foregroundStyle(Color.stoneLabel)
                     }
+                    if section == "vfs", grant.status == "open" {
+                        CreativeLink(route: .grantApply(grant.id)) {
+                            Text("Apply")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(green)
+                        }
+                        .buttonStyle(.plain)
+                    }
                     if let link = grant.externalURL, let url = URL(string: link) {
                         Button("Open listing") { openURL(url) }
                             .buttonStyle(.plain)
@@ -475,30 +483,47 @@ struct DiscoveryListView: View {
 
     private func list(_ rows: [DiscoveryListItem]) -> some View {
         ForEach(rows) { item in
-            HStack(alignment: .top, spacing: 12) {
-                if let poster = item.poster, poster.hasPrefix("http"), let url = URL(string: poster) {
-                    AsyncImage(url: url) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        Color.stoneLine
-                    }
-                    .frame(width: 48, height: 68)
-                    .clipped()
+            VStack(alignment: .leading, spacing: 8) {
+            listRow(item)
+            if kind == .challenges, let challengeID = Int(item.id) {
+                ChallengeReply(session: session, id: challengeID)
+            }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func listRow(_ item: DiscoveryListItem) -> some View {
+        let card = HStack(alignment: .top, spacing: 12) {
+            if let poster = item.poster, poster.hasPrefix("http"), let url = URL(string: poster) {
+                AsyncImage(url: url) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    Color.stoneLine
                 }
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(item.title).font(.headline).foregroundStyle(Color.stoneInk)
-                    if let subtitle = item.subtitle, !subtitle.isEmpty {
-                        Text(subtitle).font(.caption).foregroundStyle(accent)
-                    }
-                    if let body = item.body, !body.isEmpty, body != item.title {
-                        Text(body).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(4)
-                    }
+                .frame(width: 48, height: 68)
+                .clipped()
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(item.title).font(.headline).foregroundStyle(Color.stoneInk)
+                if let subtitle = item.subtitle, !subtitle.isEmpty {
+                    Text(subtitle).font(.caption).foregroundStyle(accent)
+                }
+                if let body = item.body, !body.isEmpty, body != item.title {
+                    Text(body).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(4)
                 }
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.card)
-            .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.card)
+        .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+
+        if let type = item.mediaType, let externalID = item.externalID, ["film", "tv", "game", "book", "youtube"].contains(type) {
+            CreativeLink(route: .discoveryTitle(type, externalID)) { card }
+                .buttonStyle(.plain)
+        } else {
+            card
         }
     }
 
