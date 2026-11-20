@@ -715,10 +715,13 @@ struct CreateProjectView: View {
     @State private var mediaItems: [PhotosPickerItem] = []
     @State private var mediaData: [Data] = []
     @State private var embeds: [String] = []
+    @State private var savedEmbeds: [String] = []
     @State private var embedDraft = ""
     @State private var gameLinks: [String] = []
+    @State private var savedGames: [String] = []
     @State private var gameDraft = ""
     @State private var models: [String] = []
+    @State private var savedModels: [String] = []
     @State private var modelDraft = ""
     @State private var existingMedia: [EditorMedia] = []
     @State private var removedMedia: [Int] = []
@@ -761,9 +764,9 @@ struct CreateProjectView: View {
                     }
                 }
                 galleryPicker
-                urlList("YouTube / Vimeo", placeholder: "YouTube or Vimeo URL...", items: embeds, draft: $embedDraft, add: addEmbed)
-                urlList("Game Link", placeholder: "https://yourgame.itch.io/... or Steam / Epic Games Store link", items: gameLinks, draft: $gameDraft, add: addGame)
-                urlList("3D Viewer", placeholder: "Sketchfab model page or skfb.ly link", items: models, draft: $modelDraft, add: addModel)
+                urlList("YouTube / Vimeo", placeholder: "YouTube or Vimeo URL...", saved: savedEmbeds, items: embeds, draft: $embedDraft, add: addEmbed)
+                urlList("Game Link", placeholder: "https://yourgame.itch.io/... or Steam / Epic Games Store link", saved: savedGames, items: gameLinks, draft: $gameDraft, add: addGame)
+                urlList("3D Viewer", placeholder: "Sketchfab model page or skfb.ly link", saved: savedModels, items: models, draft: $modelDraft, add: addModel)
                 chips("Tags", help: "Freeform topic, skill, or genre tags to help people find this project. Not for term or program affiliation.", presets: tagPresets, selected: tags, draft: $tagDraft) { toggleTag($0) }
                 chips("Tools Used", help: "Programming languages", presets: toolPresets, selected: tools, draft: $toolDraft) { toggleTool($0) }
                 collaborators
@@ -811,9 +814,9 @@ struct CreateProjectView: View {
             tools = editor.toolsUsed
             people = editor.collaborators.map { ProjectCredit(name: $0.name, role: $0.role ?? "") }
             links = editor.externalLinks.map { ProjectLinkDraft(label: $0.label ?? "", url: $0.url) }
-            embeds = editor.videoEmbeds
-            gameLinks = editor.gameLinks
-            models = editor.modelEmbeds
+            savedEmbeds = editor.videoEmbeds
+            savedGames = editor.gameLinks
+            savedModels = editor.modelEmbeds
             existingCover = editor.coverURL
             existingMedia = editor.media
         } catch APIError.unauthorized {
@@ -896,7 +899,7 @@ struct CreateProjectView: View {
         }
     }
 
-    private func urlList(_ title: String, placeholder: String, items: [String], draft: Binding<String>, add: @escaping () -> Void) -> some View {
+    private func urlList(_ title: String, placeholder: String, saved: [String] = [], items: [String], draft: Binding<String>, add: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title).font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
             HStack {
@@ -908,18 +911,21 @@ struct CreateProjectView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.ecoOrange)
             }
-            ForEach(items, id: \.self) { item in
+            ForEach(saved, id: \.self) { item in
                 Text(item).font(.caption).foregroundStyle(Color.stoneMuted).lineLimit(1)
+            }
+            ForEach(items, id: \.self) { item in
+                Text(item).font(.caption).foregroundStyle(Color.stoneInk).lineLimit(1)
             }
         }
     }
 
-    private func addEmbed() { push(&embeds, embedDraft) { embedDraft = "" } }
-    private func addGame() { push(&gameLinks, gameDraft) { gameDraft = "" } }
-    private func addModel() { push(&models, modelDraft) { modelDraft = "" } }
+    private func addEmbed() { push(&embeds, embedDraft, saved: savedEmbeds) { embedDraft = "" } }
+    private func addGame() { push(&gameLinks, gameDraft, saved: savedGames) { gameDraft = "" } }
+    private func addModel() { push(&models, modelDraft, saved: savedModels) { modelDraft = "" } }
 
-    private func push(_ list: inout [String], _ raw: String, clear: () -> Void) {
-        guard let url = https(raw), list.count < 10, !list.contains(url) else { return }
+    private func push(_ list: inout [String], _ raw: String, saved: [String] = [], clear: () -> Void) {
+        guard let url = https(raw), list.count + saved.count < 10, !list.contains(url), !saved.contains(url) else { return }
         list.append(url)
         clear()
     }
