@@ -211,6 +211,14 @@ nonisolated struct APIClient {
         return try await authorized(CollabBoard.self, path: "/api/creative/collabs", query: query)
     }
 
+    func managePortfolio() async throws -> ManageBoard {
+        try await catalog(ManageBoard.self, path: "/api/creative/manage", missing: "Manage Portfolio isn't available from the app yet.")
+    }
+
+    func ownProfile() async throws -> OwnSettings {
+        try await catalog(OwnSettings.self, path: "/api/creative/profile", missing: "Profile Settings isn't available from the app yet.")
+    }
+
     func funding() async throws -> FundingBoard {
         try await catalog(FundingBoard.self, path: "/api/creative/funding", missing: "The funding list isn't available from the app yet.")
     }
