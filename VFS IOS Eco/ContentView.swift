@@ -63,9 +63,9 @@ struct RootScreen: View {
             if session.account?.welcomeHub == true {
                 PortalTabs(session: session)
             } else if session.account?.home == "portfolio" {
-                PortfolioScreen(session: session, navigationTitle: "Portfolio", industryLine: false)
+                CreativeHubScreen(session: session, industry: false)
             } else {
-                PortfolioScreen(session: session, navigationTitle: "Creative ECOsystem", industryLine: true)
+                CreativeHubScreen(session: session, industry: true)
             }
             if session.account?.needsTerms == true {
                 TermsGateView(session: session)
@@ -84,7 +84,7 @@ struct PortalTabs: View {
                 if tab == 0 {
                     WelcomeHubView(session: session, openCreative: { tab = 1 })
                 } else {
-                    PortfolioScreen(session: session, navigationTitle: "Creative ECOsystem", industryLine: false)
+                    CreativeHubScreen(session: session, industry: false)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

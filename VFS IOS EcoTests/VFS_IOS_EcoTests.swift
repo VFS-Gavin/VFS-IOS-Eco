@@ -344,6 +344,10 @@ final class VFS_IOS_EcoTests: XCTestCase {
         """.data(using: .utf8)!
         let student = try JSONDecoder().decode(Account.self, from: flagged)
         XCTAssertEqual(student.creativeSections, [.portfolio, .jobs])
+        XCTAssertEqual(student.sections?.isOpen(.collabs), false)
+        XCTAssertEqual(student.sections?.isOpen(.funding), false)
+        XCTAssertEqual(student.sections?.isOpen(.facilities), true)
+        XCTAssertEqual(student.sections?.isOpen(.jobs), true)
         XCTAssertTrue(student.canCreateProfile)
 
         let created = """
