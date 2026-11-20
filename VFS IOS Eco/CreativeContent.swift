@@ -193,3 +193,25 @@ nonisolated struct ProductionCard: Decodable, Equatable, Identifiable {
         case sourceURL = "source_url"
     }
 }
+
+nonisolated struct CalendarFeed: Decodable {
+    var calendar: [CalendarItem]
+}
+
+nonisolated struct CalendarItem: Decodable, Identifiable, Equatable {
+    var id: Int
+    var title: String
+    var description: String?
+    var location: String?
+    var when: String?
+    var dateLabel: String?
+    var imageURL: String?
+    var color: String?
+    var badges: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, location, when, color, badges
+        case dateLabel = "date_label"
+        case imageURL = "image_url"
+    }
+}

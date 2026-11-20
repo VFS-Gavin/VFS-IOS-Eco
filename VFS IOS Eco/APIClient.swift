@@ -201,8 +201,27 @@ nonisolated struct APIClient {
         return try await authorized(ProfileResponse.self, path: "/api/creative/profiles/\(safe)").profile
     }
 
-    func collabs(search: String, page: Int) async throws -> CollabBoard {
-        try await authorized(CollabBoard.self, path: "/api/creative/collabs", query: pageQuery(search: search, page: page))
+    func collabs(search: String, page: Int, type: String = "", role: String = "", paidOnly: Bool = false, roleType: String = "", board: String = "active") async throws -> CollabBoard {
+        var query = pageQuery(search: search, page: page)
+        if !type.isEmpty { query.append(URLQueryItem(name: "type", value: type)) }
+        if !role.isEmpty { query.append(URLQueryItem(name: "role", value: role)) }
+        if paidOnly { query.append(URLQueryItem(name: "paid_only", value: "1")) }
+        if !roleType.isEmpty { query.append(URLQueryItem(name: "role_type", value: roleType)) }
+        if board == "archived" { query.append(URLQueryItem(name: "board", value: "archived")) }
+        return try await authorized(CollabBoard.self, path: "/api/creative/collabs", query: query)
+    }
+
+    func calendar() async throws -> [CalendarItem] {
+        let response = try await send(path: "/api/creative/calendar", method: "GET", body: nil, authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        if response.status == 404 {
+            throw APIError.message("The calendar isn't available from the app yet.")
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(CalendarFeed.self, from: response.data).calendar
     }
 
     func collab(id: Int) async throws -> CollabCard {
