@@ -207,7 +207,7 @@ final class AppSession {
     }
 
     private func loadWelcomeIfNeeded() async {
-        guard account?.welcomeHub == true else {
+        guard account?.showsWelcomeHub == true else {
             welcome = nil
             return
         }

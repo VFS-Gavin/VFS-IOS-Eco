@@ -23,8 +23,32 @@ nonisolated struct Account: Codable, Equatable {
         case terms
     }
 
+    /// Welcome Hub is the pending and admin door. Current students and alumni stay in Creative ECOsystem.
+    var showsWelcomeHub: Bool {
+        switch user.role {
+        case "admin", "pending": true
+        case "student", "alumni", "industry", "prospect": false
+        default: welcomeHub
+        }
+    }
+
+    /// Pending accounts stay on Welcome Hub until an admin grants Creative ECOsystem access.
+    var showsCreative: Bool {
+        switch user.role {
+        case "prospect": false
+        case "pending": user.canAccessCreative == true && user.blockedFromCreativeWrites != true
+        case "industry": creative != "none"
+        case "admin", "student", "alumni": true
+        default: creative == "full" || creative == "reduced"
+        }
+    }
+
+    var creativeIsIndustry: Bool {
+        user.role == "industry" || creative == "reduced"
+    }
+
     var canCreateProfile: Bool {
-        creative == "full" && profile == nil && user.blockedFromCreativeWrites != true
+        showsCreative && creative == "full" && profile == nil && user.blockedFromCreativeWrites != true
     }
 
     var needsTerms: Bool {
@@ -221,10 +245,12 @@ nonisolated struct AccountUser: Codable, Equatable {
     var email: String
     var role: String
     var blockedFromCreativeWrites: Bool?
+    var canAccessCreative: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id, name, email, role
         case blockedFromCreativeWrites = "blocked_from_creative_writes"
+        case canAccessCreative = "can_access_creative"
     }
 }
 

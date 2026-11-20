@@ -18,7 +18,7 @@ struct AccountMenu: View {
                 Text(user.name)
                 Text(user.email)
             }
-            if session.account?.creative == "full" {
+            if session.account?.showsCreative == true && session.account?.creative == "full" {
                 accountItems
             }
             Divider()
@@ -65,7 +65,7 @@ struct AccountMenu: View {
             }
         }
         Button("My Showcase") { push?(.account(.showcase)) }
-        if session.account?.welcomeHub == true, let openWelcome {
+        if session.account?.showsWelcomeHub == true, let openWelcome {
             Button("Welcome Hub", action: openWelcome)
         }
         if session.account?.user.role == "alumni" {

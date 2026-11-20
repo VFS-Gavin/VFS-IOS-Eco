@@ -12,8 +12,33 @@ final class VFS_IOS_EcoTests: XCTestCase {
         XCTAssertEqual(account.user.role, "pending")
         XCTAssertEqual(account.home, "welcome")
         XCTAssertTrue(account.welcomeHub)
+        XCTAssertTrue(account.showsWelcomeHub)
+        XCTAssertFalse(account.showsCreative)
         XCTAssertTrue(account.setUpPortfolio)
         XCTAssertFalse(account.needsTerms)
+
+        let invited = """
+        {"home":"welcome","welcome_hub":true,"creative":"full","set_up_portfolio":true,"user":{"id":4,"name":"Ada","email":"ada@gmail.com","role":"pending","can_access_creative":true}}
+        """.data(using: .utf8)!
+        let pendingInvited = try JSONDecoder().decode(Account.self, from: invited)
+        XCTAssertTrue(pendingInvited.showsWelcomeHub)
+        XCTAssertTrue(pendingInvited.showsCreative)
+
+        let studentDoor = """
+        {"home":"welcome","welcome_hub":true,"creative":"full","set_up_portfolio":true,"user":{"id":5,"name":"Ada","email":"ada@vfs.edu","role":"student"}}
+        """.data(using: .utf8)!
+        let current = try JSONDecoder().decode(Account.self, from: studentDoor)
+        XCTAssertFalse(current.showsWelcomeHub)
+        XCTAssertTrue(current.showsCreative)
+
+        let admin = """
+        {"home":"welcome","welcome_hub":true,"creative":"full","set_up_portfolio":false,"user":{"id":6,"name":"Ada","email":"ada@vfs.com","role":"admin"},"sections":{"portfolio":true,"collabs":false,"jobs":true,"funding":false}}
+        """.data(using: .utf8)!
+        let staff = try JSONDecoder().decode(Account.self, from: admin)
+        XCTAssertTrue(staff.showsWelcomeHub)
+        XCTAssertTrue(staff.showsCreative)
+        XCTAssertTrue(staff.sections?.isOpen(.funding) == false)
+        XCTAssertTrue(CreativeHubCatalog.isOpen(.funding, account: staff))
     }
 
     func testTermsGateFollowsTheWebsiteVersion() throws {
