@@ -142,9 +142,40 @@ nonisolated struct APIClient {
         return try JSONDecoder().decode(SurveyForm.self, from: response.data)
     }
 
-    func submitJSON(path: String, body: [String: Any]) async throws -> String {
+    func submitJSON(path: String, method: String = "POST", body: [String: Any]) async throws -> String {
         let data = try JSONSerialization.data(withJSONObject: body)
-        return try await submit(path: path, body: data, contentType: "application/json")
+        return try await submit(path: path, method: method, body: data, contentType: "application/json")
+    }
+
+    func saveProfile(_ body: [String: Any]) async throws -> String {
+        try await submitJSON(path: "/api/creative/profile", method: "PUT", body: body)
+    }
+
+    func createProject(_ body: [String: Any]) async throws -> String {
+        try await submitJSON(path: "/api/creative/projects", body: body)
+    }
+
+    func toggleProjectPublish(id: Int) async throws -> String {
+        try await submitJSON(path: "/api/creative/projects/\(id)/toggle-publish", body: [:])
+    }
+
+    func deleteProject(id: Int) async throws -> String {
+        try await submitJSON(path: "/api/creative/projects/\(id)", method: "DELETE", body: [:])
+    }
+
+    func toggleCollabHidden(id: Int) async throws -> Bool {
+        let data = try JSONSerialization.data(withJSONObject: [:])
+        let response = try await sendData(path: "/api/creative/collaborations/\(id)/toggle-hide", method: "POST", body: data, contentType: "application/json", authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        guard let object = try? JSONSerialization.jsonObject(with: response.data) as? [String: Any],
+              let visible = object["visible"] as? Bool else {
+            throw APIError.message("Something went wrong.")
+        }
+        return !visible
     }
 
     func submitMultipart(path: String, fields: [String: String], files: [FormAttachment]) async throws -> String {
@@ -362,8 +393,8 @@ nonisolated struct APIClient {
         return RawResponse(status: status, data: data)
     }
 
-    private func submit(path: String, body: Data, contentType: String) async throws -> String {
-        let response = try await sendData(path: path, method: "POST", body: body, contentType: contentType, authorize: true)
+    private func submit(path: String, method: String = "POST", body: Data, contentType: String) async throws -> String {
+        let response = try await sendData(path: path, method: method, body: body, contentType: contentType, authorize: true)
         if response.status == 401 {
             KeychainStore.clearToken()
             throw APIError.unauthorized
@@ -434,7 +465,14 @@ nonisolated struct APIClient {
     }
 
     private func message(in data: Data) -> String? {
-        jsonString(data, key: "message") ?? jsonString(data, key: "error")
+        if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let errors = object["errors"] as? [String: Any] {
+            for value in errors.values {
+                if let list = value as? [String], let first = list.first, !first.isEmpty { return first }
+                if let text = value as? String, !text.isEmpty { return text }
+            }
+        }
+        return jsonString(data, key: "message") ?? jsonString(data, key: "error")
     }
 
     private func jsonString(_ data: Data, key: String) -> String? {
