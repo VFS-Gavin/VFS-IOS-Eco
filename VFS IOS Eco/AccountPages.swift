@@ -13,7 +13,9 @@ struct ManagePortfolioView: View {
     @State private var tab: ManageTab
     @State private var board: ManageBoard?
     @State private var message: String?
+    @State private var notice: String?
     @State private var loading = false
+    @State private var pendingDelete: ManagedProject?
 
     init(session: AppSession, start: ManageTab, client: APIClient = APIClient()) {
         self.session = session
@@ -40,6 +42,9 @@ struct ManagePortfolioView: View {
                     }
                 }
                 if loading { ProgressView() }
+                if let notice {
+                    Text(notice).font(.subheadline).foregroundStyle(Color.ecoOrange)
+                }
                 if let message {
                     Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
                 }
@@ -61,10 +66,29 @@ struct ManagePortfolioView: View {
         .navigationTitle("Manage Portfolio")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
+        .confirmationDialog("Delete this project?", isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }), titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                if let project = pendingDelete { Task { await remove(project) } }
+            }
+            Button("Cancel", role: .cancel) { pendingDelete = nil }
+        } message: {
+            Text(pendingDelete?.title ?? "")
+        }
     }
 
     @ViewBuilder
     private func projects(_ rows: [ManagedProject]) -> some View {
+        NavigationLink {
+            CreateProjectView(session: session) { await load() }
+        } label: {
+            Text("Create New Project")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color.ecoOrange)
+        }
+        .buttonStyle(.plain)
         if rows.isEmpty {
             Text("No Projects Yet")
                 .font(.headline)
@@ -77,10 +101,22 @@ struct ManagePortfolioView: View {
                 .font(.caption)
                 .foregroundStyle(Color.stoneMuted)
             ForEach(rows) { project in
-                NavigationLink(value: CreativeRoute.project(project.id)) {
-                    projectCard(project)
+                VStack(alignment: .leading, spacing: 8) {
+                    NavigationLink(value: CreativeRoute.project(project.id)) {
+                        projectCard(project)
+                    }
+                    .buttonStyle(.plain)
+                    HStack(spacing: 8) {
+                        Button(project.isDraft ? "Publish" : "Unpublish") {
+                            Task { await publish(project) }
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.ecoOrange)
+                        Button("Delete") { pendingDelete = project }
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                    }
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -133,10 +169,17 @@ struct ManagePortfolioView: View {
                 .font(.caption)
                 .foregroundStyle(Color.stoneMuted)
             ForEach(rows) { project in
-                NavigationLink(value: CreativeRoute.project(project.id)) {
-                    projectCard(project)
+                VStack(alignment: .leading, spacing: 8) {
+                    NavigationLink(value: CreativeRoute.project(project.id)) {
+                        projectCard(project)
+                    }
+                    .buttonStyle(.plain)
+                    Button(project.collabHidden == true ? "Show on profile" : "Hide from profile") {
+                        Task { await hide(project) }
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.ecoOrange)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -226,6 +269,50 @@ struct ManagePortfolioView: View {
             message = "Manage Portfolio isn't available from the app yet."
         }
     }
+
+    private func publish(_ project: ManagedProject) async {
+        notice = nil
+        do {
+            notice = try await client.toggleProjectPublish(id: project.id)
+            await load()
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "The project could not be updated."
+        }
+    }
+
+    private func remove(_ project: ManagedProject) async {
+        pendingDelete = nil
+        notice = nil
+        do {
+            notice = try await client.deleteProject(id: project.id)
+            await load()
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "The project could not be deleted."
+        }
+    }
+
+    private func hide(_ project: ManagedProject) async {
+        notice = nil
+        do {
+            let hidden = try await client.toggleCollabHidden(id: project.id)
+            notice = hidden ? "Hidden from profile." : "Shown on your profile."
+            await load()
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "The collaboration could not be updated."
+        }
+    }
 }
 
 struct OwnProfileView: View {
@@ -235,7 +322,29 @@ struct OwnProfileView: View {
     @Environment(\.openURL) private var openURL
     @State private var settings: OwnSettings?
     @State private var message: String?
+    @State private var notice: String?
     @State private var loading = false
+    @State private var saving = false
+    @State private var filled = false
+    @State private var displayName = ""
+    @State private var headline = ""
+    @State private var pronouns = ""
+    @State private var bio = ""
+    @State private var role = ""
+    @State private var location = ""
+    @State private var website = ""
+    @State private var showreel = ""
+    @State private var social: [String: String] = [:]
+    @State private var programs: [String] = []
+    @State private var program = ""
+    @State private var term = ""
+    @State private var graduationYear = ""
+    @State private var skills = ""
+    @State private var software = ""
+    @State private var openToWork = false
+    @State private var openToCollab = false
+    @State private var visibility = "public"
+    @State private var mediaTastePublic = true
 
     var body: some View {
         ScrollView {
@@ -244,15 +353,25 @@ struct OwnProfileView: View {
                     .font(.system(size: 34, weight: .bold, design: .serif))
                     .foregroundStyle(Color.stoneInk)
                 if loading { ProgressView() }
+                if let notice {
+                    Text(notice).font(.subheadline).foregroundStyle(Color.ecoOrange)
+                }
                 if let message {
                     Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
                 }
-                if let settings {
+                if settings != nil {
                     if showcase {
-                        showcaseBody(settings)
+                        showcaseEditor()
                     } else {
-                        settingsBody(settings)
+                        settingsEditor()
                     }
+                    Button(saving ? "Saving…" : "Save") { Task { await save() } }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.ecoOrange)
+                        .disabled(saving)
                 }
             }
             .padding(20)
@@ -264,38 +383,77 @@ struct OwnProfileView: View {
         .task { await load() }
     }
 
-    @ViewBuilder
-    private func settingsBody(_ settings: OwnSettings) -> some View {
-        block("About You") {
-            line("Display Name", settings.displayName)
-            line("Headline", settings.headline)
-            line("Pronouns", settings.pronouns)
-            line("Role", settings.role)
-            line("Location", settings.location)
-            paragraph("Bio", settings.bio)
-            linkLine("Website", settings.website)
-            linkLine("Showreel", settings.showreel)
-            ForEach(settings.socialLinks.keys.sorted(), id: \.self) { key in
-                linkLine(key.prefix(1).uppercased() + key.dropFirst(), settings.socialLinks[key])
+    private func settingsEditor() -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            block("About You") {
+                editorField("Display Name", text: $displayName)
+                editorField("Headline", text: $headline)
+                editorField("Pronouns", text: $pronouns)
+                editorField("Role", text: $role)
+                editorField("Location", text: $location)
+                editorField("Bio", text: $bio, axis: .vertical)
+                editorField("Website", text: $website)
+                editorField("Showreel", text: $showreel)
+                ForEach(Self.socialPlatforms, id: \.self) { key in
+                    editorField(key.prefix(1).uppercased() + key.dropFirst(), text: socialBinding(key))
+                }
+            }
+            block("VFS Info") {
+                Picker("Program", selection: $program) {
+                    Text("None").tag("")
+                    ForEach(ProfilePrograms.options, id: \.key) { option in
+                        Text(option.label).tag(option.key)
+                    }
+                }
+                Picker("Term", selection: $term) {
+                    Text("None").tag("")
+                    ForEach(Self.terms, id: \.self) { Text($0).tag($0) }
+                }
+                editorField("Graduation Year", text: $graduationYear)
+            }
+            block("Skills & Tools") {
+                editorField("Skills", text: $skills, prompt: "Comma separated")
+                editorField("Software", text: $software, prompt: "Comma separated")
+            }
+            block("Availability") {
+                Toggle("Open to work", isOn: $openToWork)
+                Toggle("Open to collab", isOn: $openToCollab)
+            }
+            block("Privacy & URL") {
+                Picker("Visibility", selection: $visibility) {
+                    Text("Public").tag("public")
+                    Text("Private").tag("private")
+                }
+                .pickerStyle(.segmented)
             }
         }
-        block("VFS Info") {
-            line("Program", settings.program.map(CreativeLabels.program).joined(separator: ", "))
-            line("Term", settings.term)
-            line("Graduation Year", settings.graduationYear)
-        }
-        block("Skills & Tools") {
-            line("Skills", settings.skills.joined(separator: ", "))
-            line("Software", settings.software.joined(separator: ", "))
-        }
-        block("Availability") {
-            line("Open to work", settings.openToWork ? "Yes" : "No")
-            line("Open to collab", settings.openToCollab ? "Yes" : "No")
-        }
-        block("Privacy & URL") {
-            line("Visibility", settings.visibility.prefix(1).uppercased() + settings.visibility.dropFirst())
+    }
+
+    private func showcaseEditor() -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Toggle("Show my showcase on my public profile", isOn: $mediaTastePublic)
+            if let settings {
+                showcaseBody(settings)
+            }
         }
     }
+
+    private func editorField(_ label: String, text: Binding<String>, prompt: String = "", axis: Axis = .horizontal) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.stoneMuted)
+            TextField(prompt, text: text, axis: axis)
+                .textFieldStyle(.roundedBorder)
+        }
+    }
+
+    private func socialBinding(_ key: String) -> Binding<String> {
+        Binding(get: { social[key] ?? "" }, set: { social[key] = $0 })
+    }
+
+    private static let terms = ["Alumni", "Term 1", "Term 2", "Term 3", "Term 4", "Term 5", "Term 6"]
+    private static let socialPlatforms = ["instagram", "facebook", "linkedin", "twitter", "tiktok", "youtube", "behance", "dribbble", "vimeo", "github", "soundcloud", "artstation", "discord", "bluesky", "steam", "itch"]
 
     @ViewBuilder
     private func showcaseBody(_ settings: OwnSettings) -> some View {
@@ -410,8 +568,10 @@ struct OwnProfileView: View {
         loading = true
         defer { loading = false }
         do {
-            settings = try await client.ownProfile()
+            let page = try await client.ownProfile()
+            settings = page
             message = nil
+            if !filled { fill(page) }
         } catch APIError.unauthorized {
             session.signOut()
         } catch APIError.message(let text) {
@@ -419,6 +579,92 @@ struct OwnProfileView: View {
         } catch {
             message = "Profile Settings isn't available from the app yet."
         }
+    }
+
+    private func fill(_ page: OwnSettings) {
+        displayName = page.displayName ?? ""
+        headline = page.headline ?? ""
+        pronouns = page.pronouns ?? ""
+        bio = page.bio ?? ""
+        role = page.role ?? ""
+        location = page.location ?? ""
+        website = page.website ?? ""
+        showreel = page.showreel ?? ""
+        social = page.socialLinks
+        programs = page.program
+        program = page.program.first ?? ""
+        term = page.term ?? ""
+        graduationYear = page.graduationYear ?? ""
+        skills = page.skills.joined(separator: ", ")
+        software = page.software.joined(separator: ", ")
+        openToWork = page.openToWork
+        openToCollab = page.openToCollab
+        visibility = page.visibility
+        mediaTastePublic = page.mediaTastePublic
+        filled = true
+    }
+
+    private func save() async {
+        saving = true
+        notice = nil
+        message = nil
+        defer { saving = false }
+        do {
+            notice = try await client.saveProfile(payload())
+            await session.refresh()
+            filled = false
+            await load()
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "The profile could not be saved."
+        }
+    }
+
+    private func payload() -> [String: Any] {
+        var body: [String: Any] = [
+            "display_name": displayName.trimmingCharacters(in: .whitespacesAndNewlines),
+            "headline": headline.trimmingCharacters(in: .whitespacesAndNewlines),
+            "pronouns": pronouns.trimmingCharacters(in: .whitespacesAndNewlines),
+            "bio": bio.trimmingCharacters(in: .whitespacesAndNewlines),
+            "role": role.trimmingCharacters(in: .whitespacesAndNewlines),
+            "location": location.trimmingCharacters(in: .whitespacesAndNewlines),
+            "skills": commaList(skills),
+            "software": commaList(software),
+            "open_to_work": openToWork,
+            "open_to_collab": openToCollab,
+            "visibility": visibility,
+            "media_taste_public": mediaTastePublic,
+        ]
+        if !programs.isEmpty, program == programs.first {
+            body["program"] = programs
+        } else if !program.isEmpty {
+            body["program"] = [program]
+        }
+        if !term.isEmpty { body["term"] = term }
+        let year = graduationYear.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !year.isEmpty { body["graduation_year"] = year }
+        if let site = https(website) { body["website_url"] = site }
+        if let reel = https(showreel) { body["showreel_url"] = reel }
+        var links: [String: String] = [:]
+        for key in Self.socialPlatforms {
+            if let url = https(social[key] ?? "") { links[key] = url }
+        }
+        if !links.isEmpty { body["social_links"] = links }
+        return body
+    }
+
+    private func commaList(_ raw: String) -> [String] {
+        raw.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    }
+
+    private func https(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.lowercased().hasPrefix("http://") || trimmed.lowercased().hasPrefix("https://") { return trimmed }
+        return "https://\(trimmed)"
     }
 }
 
@@ -432,5 +678,91 @@ enum AccountMedia {
             return URL(string: raw, relativeTo: APIConfiguration.baseURL)?.absoluteURL
         }
         return URL(string: raw)
+    }
+}
+
+struct CreateProjectView: View {
+    @Bindable var session: AppSession
+    var onSaved: () async -> Void
+    var client: APIClient = APIClient()
+    @Environment(\.dismiss) private var dismiss
+    @State private var title = ""
+    @State private var details = ""
+    @State private var category = "film_production"
+    @State private var published = true
+    @State private var professional = false
+    @State private var message: String?
+    @State private var saving = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Create New Project")
+                    .font(.system(size: 34, weight: .bold, design: .serif))
+                    .foregroundStyle(Color.stoneInk)
+                field("Title", text: $title)
+                field("Description", text: $details)
+                Picker("Category", selection: $category) {
+                    ForEach(ProfilePrograms.options, id: \.key) { option in
+                        Text(option.label).tag(option.key)
+                    }
+                    Text("Other").tag("other")
+                }
+                Toggle("Published", isOn: $published)
+                Toggle("Professional Portfolio", isOn: $professional)
+                Text("Mark this project for industry review. Industry accounts with portfolio access can see it on their board. Other students still see your work the same way.")
+                    .font(.caption)
+                    .foregroundStyle(Color.stoneMuted)
+                if let message {
+                    Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
+                }
+                Button(saving ? "Saving…" : (published ? "Publish Project" : "Save Draft")) {
+                    Task { await save() }
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color.ecoOrange)
+                .disabled(saving || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+            .padding(20)
+        }
+        .background(Color.stone)
+        .navigationTitle("New Project")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func field(_ label: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label).font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            TextField(label, text: text, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+        }
+    }
+
+    private func save() async {
+        saving = true
+        message = nil
+        defer { saving = false }
+        var body: [String: Any] = [
+            "title": title.trimmingCharacters(in: .whitespacesAndNewlines),
+            "category": category,
+            "is_published": published,
+            "is_professional": professional,
+        ]
+        let copy = details.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !copy.isEmpty { body["description"] = copy }
+        do {
+            _ = try await client.createProject(body)
+            await onSaved()
+            dismiss()
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "The project could not be created."
+        }
     }
 }
