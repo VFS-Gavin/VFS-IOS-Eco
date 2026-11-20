@@ -84,7 +84,7 @@ struct PortalTabs: View {
                 if tab == 0 {
                     WelcomeHubView(session: session, openCreative: { tab = 1 })
                 } else {
-                    CreativeHubScreen(session: session, industry: false)
+                    CreativeHubScreen(session: session, industry: false, openWelcome: { tab = 0 })
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -420,7 +420,10 @@ struct WelcomeHubView: View {
             }
             .toolbar {
                 ThemeToggle()
-                Button("Sign out") { session.signOut() }
+                AccountMenu(session: session) { route in
+                    session.queuedRoute = route
+                    openCreative()
+                }
             }
         }
         .tint(accent)
@@ -487,7 +490,7 @@ struct DestinationView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.stone.ignoresSafeArea())
         .toolbar {
-            Button("Sign out") { session.signOut() }
+            AccountMenu(session: session)
         }
         .navigationTitle(title)
     }
