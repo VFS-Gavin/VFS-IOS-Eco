@@ -261,8 +261,8 @@ struct DiscoveryView: View {
 
 struct FacilitiesView: View {
     @Bindable var session: AppSession
+    var board: String? = nil
     var client: APIClient = APIClient()
-    @State private var category: String?
     @State private var facilities: [FacilityItem] = []
     @State private var message: String?
     @State private var loading = false
@@ -274,19 +274,15 @@ struct FacilitiesView: View {
                     .font(.system(size: 11, weight: .bold))
                     .tracking(1.4)
                     .foregroundStyle(Color.stoneMuted)
-                if let category {
-                    Button("All resources") { self.category = nil }
-                        .buttonStyle(.plain)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(Color(red: 8 / 255, green: 145 / 255, blue: 178 / 255))
-                    Text(categoryTitle(category))
+                if let board {
+                    Text(categoryTitle(board))
                         .font(.system(size: 32, weight: .bold, design: .serif))
                         .foregroundStyle(Color.stoneInk)
                     if loading { ProgressView() }
                     if let message {
                         Text(message).font(.body).foregroundStyle(Color.stoneMuted)
                     }
-                    ForEach(filtered(category)) { item in
+                    ForEach(filtered(board)) { item in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(item.name).font(.headline).foregroundStyle(Color.stoneInk)
                             if let description = item.description, !description.isEmpty {
@@ -317,9 +313,7 @@ struct FacilitiesView: View {
     }
 
     private func facilityCard(_ title: String, _ subtitle: String, _ detail: String, key: String) -> some View {
-        Button {
-            category = key
-        } label: {
+        CreativeLink(route: .facilityBoard(key)) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(title).font(.system(size: 28, weight: .bold, design: .serif)).foregroundStyle(Color.stoneInk)
                 Text(subtitle).font(.body.weight(.medium)).foregroundStyle(Color.stoneMuted)

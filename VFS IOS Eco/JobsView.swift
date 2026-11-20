@@ -9,11 +9,11 @@ private enum JobSection: String, CaseIterable, Identifiable {
 
 struct JobsView: View {
     @Bindable var session: AppSession
+    var board: String? = nil
     var client: APIClient = APIClient()
-    @State private var board: JobsBoard?
+    @State private var feed: JobsBoard?
     @State private var jobs: [JobCard] = []
     @State private var partnerJobs: [JobCard] = []
-    @State private var section: JobSection?
     @State private var search = ""
     @State private var type = ""
     @State private var level = ""
@@ -32,23 +32,28 @@ struct JobsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if section == nil {
-                    landing
+                if let board, let kind = JobSection(rawValue: board) {
+                    sectionContent(kind)
                 } else {
-                    Button("All opportunities") { section = nil }
-                        .buttonStyle(.plain)
-                        .font(.caption.weight(.bold))
-                        .textCase(.uppercase)
-                        .tracking(1)
-                        .foregroundStyle(Color.jobGold)
-                    sectionBody
+                    landing
                 }
                 SiteFooter(session: session)
             }
             .padding(20)
         }
         .background(Color.stone)
+        .navigationTitle(boardTitle)
+        .navigationBarTitleDisplayMode(.inline)
         .task { await reload() }
+    }
+
+    private var boardTitle: String {
+        switch board {
+        case "studios": "Real Jobs at Top Studios"
+        case "filming": "What's Filming?"
+        case "partner": "All Other Jobs"
+        default: "Industry Opportunities"
+        }
     }
 
     private var landing: some View {
@@ -59,9 +64,9 @@ struct JobsView: View {
                 accentColor: .jobGold,
                 detail: "Choose your path below."
             )
-            pathCard("Real Jobs at Top Studios", "Open positions pulled directly from top VFX, animation, and game studio career pages.", count: board?.jobs.total, unit: "open roles", section: .studios)
-            pathCard("What's Filming?", "Active film & TV productions shooting in Vancouver, Alberta, Toronto, LA, Austin & Atlanta. Updated regularly.", count: board?.productions.count, unit: "active productions", section: .filming)
-            pathCard("All Other Jobs & Work Opportunities", "Openings sent in by companies and industry partners, such as a studio hiring an editor. VFS reviews each post before it goes live.", count: board?.partnerJobs.total, unit: "open roles", section: .partner)
+            pathCard("Real Jobs at Top Studios", "Open positions pulled directly from top VFX, animation, and game studio career pages.", count: feed?.jobs.total, unit: "open roles", section: .studios)
+            pathCard("What's Filming?", "Active film & TV productions shooting in Vancouver, Alberta, Toronto, LA, Austin & Atlanta. Updated regularly.", count: feed?.productions.count, unit: "active productions", section: .filming)
+            pathCard("All Other Jobs & Work Opportunities", "Openings sent in by companies and industry partners, such as a studio hiring an editor. VFS reviews each post before it goes live.", count: feed?.partnerJobs.total, unit: "open roles", section: .partner)
             if phase == .loading { ProgressView() }
             if case .failed(let message) = phase {
                 Text(message).foregroundStyle(Color.stoneInk)
@@ -70,9 +75,7 @@ struct JobsView: View {
     }
 
     private func pathCard(_ title: String, _ detail: String, count: Int?, unit: String, section: JobSection) -> some View {
-        Button {
-            self.section = section
-        } label: {
+        CreativeLink(route: .jobBoard(section.rawValue)) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(title).font(.system(size: 26, weight: .bold, design: .serif)).foregroundStyle(Color.stoneInk)
                 Text(detail).font(.subheadline).foregroundStyle(Color.stoneMuted)
@@ -90,12 +93,12 @@ struct JobsView: View {
     }
 
     @ViewBuilder
-    private var sectionBody: some View {
+    private func sectionContent(_ section: JobSection) -> some View {
         switch section {
         case .studios:
             filters
             jobList(jobs, empty: "No jobs found.")
-            if board?.jobs.hasMore == true {
+            if feed?.jobs.hasMore == true {
                 moreButton(loadingJobs ? "Loading" : "Load more") { await loadMoreJobs() }
             }
         case .partner:
@@ -103,7 +106,7 @@ struct JobsView: View {
                 Task { await reload() }
             }
             jobList(shownPartners, empty: "No partner jobs found.")
-            if board?.partnerJobs.hasMore == true {
+            if feed?.partnerJobs.hasMore == true {
                 moreButton(loadingPartners ? "Loading" : "Load more") { await loadMorePartners() }
             }
         case .filming:
@@ -115,8 +118,6 @@ struct JobsView: View {
             ForEach(rows) { production in
                 productionCard(production)
             }
-        case nil:
-            EmptyView()
         }
     }
 
@@ -229,8 +230,8 @@ struct JobsView: View {
     }
 
     private var shownProductions: [ProductionCard] {
-        guard !region.isEmpty else { return board?.productions ?? [] }
-        return (board?.productions ?? []).filter { $0.region == region }
+        guard !region.isEmpty else { return feed?.productions ?? [] }
+        return (feed?.productions ?? []).filter { $0.region == region }
     }
 
     private func regionLabel(_ value: String) -> String {
@@ -254,7 +255,7 @@ struct JobsView: View {
         phase = .loading
         do {
             let page = try await client.jobs(search: search, page: 1, partnerPage: 1, type: type, remote: remote, level: level, sort: sort)
-            board = page
+            feed = page
             jobs = page.jobs.data
             partnerJobs = page.partnerJobs.data
             phase = .ready
@@ -268,12 +269,12 @@ struct JobsView: View {
     }
 
     private func loadMoreJobs() async {
-        guard let board, board.jobs.hasMore, !loadingJobs else { return }
+        guard let feed, feed.jobs.hasMore, !loadingJobs else { return }
         loadingJobs = true
         defer { loadingJobs = false }
         do {
-            let page = try await client.jobs(search: search, page: board.jobs.currentPage + 1, partnerPage: board.partnerJobs.currentPage, type: type, remote: remote, level: level, sort: sort)
-            self.board = JobsBoard(jobs: page.jobs, partnerJobs: board.partnerJobs, productions: page.productions)
+            let page = try await client.jobs(search: search, page: feed.jobs.currentPage + 1, partnerPage: feed.partnerJobs.currentPage, type: type, remote: remote, level: level, sort: sort)
+            self.feed = JobsBoard(jobs: page.jobs, partnerJobs: feed.partnerJobs, productions: page.productions)
             let existing = Set(jobs.map(\.id))
             jobs.append(contentsOf: page.jobs.data.filter { !existing.contains($0.id) })
         } catch APIError.unauthorized {
@@ -283,12 +284,12 @@ struct JobsView: View {
     }
 
     private func loadMorePartners() async {
-        guard let board, board.partnerJobs.hasMore, !loadingPartners else { return }
+        guard let feed, feed.partnerJobs.hasMore, !loadingPartners else { return }
         loadingPartners = true
         defer { loadingPartners = false }
         do {
-            let page = try await client.jobs(search: search, page: board.jobs.currentPage, partnerPage: board.partnerJobs.currentPage + 1, type: type, remote: remote, level: level, sort: sort)
-            self.board = JobsBoard(jobs: board.jobs, partnerJobs: page.partnerJobs, productions: page.productions)
+            let page = try await client.jobs(search: search, page: feed.jobs.currentPage, partnerPage: feed.partnerJobs.currentPage + 1, type: type, remote: remote, level: level, sort: sort)
+            self.feed = JobsBoard(jobs: feed.jobs, partnerJobs: page.partnerJobs, productions: page.productions)
             let existing = Set(partnerJobs.map(\.id))
             partnerJobs.append(contentsOf: page.partnerJobs.data.filter { !existing.contains($0.id) })
         } catch APIError.unauthorized {

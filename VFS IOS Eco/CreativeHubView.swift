@@ -98,13 +98,16 @@ struct CreativeHubScreen: View {
     var session: AppSession
     var industry: Bool
     var openWelcome: (() -> Void)?
-    @State private var path = NavigationPath()
+    @State private var path: [CreativeRoute] = []
 
     var body: some View {
         NavigationStack(path: $path) {
             CreativeHubHome(session: session, industry: industry, openWelcome: openWelcome, path: $path)
                 .navigationDestination(for: CreativeRoute.self) { route in
                     CreativeDestination(session: session, route: route)
+                        .oneStepBack {
+                            if !path.isEmpty { path.removeLast() }
+                        }
                 }
                 .environment(\.openCreativeRoute) { route in
                     path.append(route)
@@ -117,7 +120,7 @@ struct CreativeHubHome: View {
     @Bindable var session: AppSession
     var industry: Bool
     var openWelcome: (() -> Void)?
-    @Binding var path: NavigationPath
+    @Binding var path: [CreativeRoute]
     @Environment(\.colorScheme) private var colorScheme
 
     private var cards: [CreativeHubCard] {
@@ -301,6 +304,12 @@ struct CreativeDestination: View {
             CollabsView(session: session)
         case .jobs:
             JobsView(session: session)
+        case .jobBoard(let board):
+            JobsView(session: session, board: board)
+        case .facilityBoard(let board):
+            FacilitiesView(session: session, board: board)
+        case .fundingBoard(let board):
+            FundingView(session: session, board: board)
         case .area(let kind):
             switch kind {
             case .discovery:

@@ -243,6 +243,20 @@ extension View {
             .ignoresSafeArea()
         }
     }
+
+    func oneStepBack(pop: @escaping () -> Void) -> some View {
+        navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: pop) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.backward")
+                            Text("Back")
+                        }
+                    }
+                }
+            }
+    }
 }
 
 struct SharpCard<Content: View>: View {

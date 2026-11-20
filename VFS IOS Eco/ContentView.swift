@@ -253,6 +253,7 @@ struct WelcomeHubView: View {
     @Bindable var session: AppSession
     var openCreative: () -> Void = {}
     @State private var search = ""
+    @State private var path: [WelcomeRoute] = []
 
     private var accent: Color {
         Color(hex: session.welcome?.accent ?? "8B1A1A") ?? .welcomeRed
@@ -263,7 +264,7 @@ struct WelcomeHubView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     VStack(alignment: .leading, spacing: 10) {
@@ -385,6 +386,7 @@ struct WelcomeHubView: View {
             }
             .navigationTitle("Welcome Hub")
             .navigationDestination(for: WelcomeRoute.self) { route in
+                Group {
                 switch route {
                 case .schoolInfo:
                     SchoolInfoView()
@@ -434,24 +436,16 @@ struct WelcomeHubView: View {
                     HousingSeekingView(session: session)
                 case .housingProperty(let id):
                     HousingListingDetailView(session: session, id: id)
+                case .form(let link):
+                    welcomeForm(link)
                 case .programPrep(let slug):
                     ProgramPrepView(slug: slug)
                 case .summary(let title, let description):
                     PageSummaryView(title: title, description: description)
                 }
-            }
-            .navigationDestination(for: WelcomeFormLink.self) { link in
-                switch link {
-                case .survey:
-                    QuestionnaireFormView(session: session)
-                case .parentConsent:
-                    ParentConsentFormView(session: session)
-                case .contact:
-                    ContactUpdateFormView(session: session)
-                case .confidential:
-                    ConfidentialFormView(session: session)
-                case .t2202:
-                    T2202FormView(session: session)
+                }
+                .oneStepBack {
+                    if !path.isEmpty { path.removeLast() }
                 }
             }
             .toolbar {
@@ -463,6 +457,22 @@ struct WelcomeHubView: View {
             }
         }
         .tint(accent)
+    }
+
+    @ViewBuilder
+    private func welcomeForm(_ link: WelcomeFormLink) -> some View {
+        switch link {
+        case .survey:
+            QuestionnaireFormView(session: session)
+        case .parentConsent:
+            ParentConsentFormView(session: session)
+        case .contact:
+            ContactUpdateFormView(session: session)
+        case .confidential:
+            ConfidentialFormView(session: session)
+        case .t2202:
+            T2202FormView(session: session)
+        }
     }
 
     private var showsAnnouncements: Bool {

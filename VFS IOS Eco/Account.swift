@@ -163,7 +163,10 @@ enum CreativeRoute: Hashable {
     case portfolio
     case collabs
     case jobs
+    case jobBoard(String)
     case area(CreativeHubKind)
+    case facilityBoard(String)
+    case fundingBoard(String)
     case account(AccountArea)
     case workshopCategory(String)
     case discoveryList(DiscoveryListKind)
@@ -338,6 +341,7 @@ nonisolated enum WelcomeRoute: Hashable {
     case housingLandlord
     case housingSeeking
     case housingProperty(Int)
+    case form(WelcomeFormLink)
     case programPrep(String)
     case summary(title: String, description: String)
 
