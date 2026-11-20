@@ -154,11 +154,19 @@ final class AppSession {
     }
 
     func signOut() {
+        let token = KeychainStore.readToken()
         KeychainStore.clearToken()
         account = nil
         welcome = nil
         phase = .signedOut
         statusMessage = nil
+        if let token {
+            Task {
+                var revoking = APIClient()
+                revoking.token = { token }
+                await revoking.logout()
+            }
+        }
         for cached in (try? context.fetch(FetchDescriptor<CachedAccount>())) ?? [] {
             context.delete(cached)
         }

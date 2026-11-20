@@ -7,6 +7,7 @@ nonisolated struct Account: Codable, Equatable {
     var setUpPortfolio: Bool
     var user: AccountUser
     var industry: IndustryFlags?
+    var sections: CreativeFlags?
     var terms: TermsStatus?
 
     enum CodingKeys: String, CodingKey {
@@ -16,6 +17,7 @@ nonisolated struct Account: Codable, Equatable {
         case setUpPortfolio = "set_up_portfolio"
         case user
         case industry
+        case sections
         case terms
     }
 
@@ -26,18 +28,35 @@ nonisolated struct Account: Codable, Equatable {
 
     var creativeSections: [CreativeSection] {
         guard creative != "none" else { return [] }
+        if let sections {
+            return CreativeSection.allCases.filter { sections.allows($0) }
+        }
         let reduced = creative == "reduced"
-        var sections: [CreativeSection] = []
+        var listed: [CreativeSection] = []
         if !reduced || industry?.canSeePortfolio != false {
-            sections.append(.portfolio)
+            listed.append(.portfolio)
         }
         if !reduced || industry?.canSeeCollabs == true {
-            sections.append(.collabs)
+            listed.append(.collabs)
         }
         if !reduced || industry?.canSeeJobs == true {
-            sections.append(.jobs)
+            listed.append(.jobs)
         }
-        return sections
+        return listed
+    }
+}
+
+nonisolated struct CreativeFlags: Codable, Equatable {
+    var portfolio: Bool
+    var collabs: Bool
+    var jobs: Bool
+
+    func allows(_ section: CreativeSection) -> Bool {
+        switch section {
+        case .portfolio: portfolio
+        case .collabs: collabs
+        case .jobs: jobs
+        }
     }
 }
 
