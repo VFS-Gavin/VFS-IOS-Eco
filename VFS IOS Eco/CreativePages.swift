@@ -14,8 +14,10 @@ nonisolated struct DiscoveryHit: Decodable, Identifiable {
     var resultType: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, name, type, year, poster, slug
+        case id, title, name, type, year, poster, photo, avatar, slug, department
+        case posterURL = "poster_url"
         case resultType = "result_type"
+        case mediaType = "media_type"
     }
 
     init(from decoder: Decoder) throws {
@@ -24,12 +26,16 @@ nonisolated struct DiscoveryHit: Decodable, Identifiable {
             id = text
         } else if let number = try? container.decode(Int.self, forKey: .id) {
             id = String(number)
+        } else if let slug = try? container.decode(String.self, forKey: .slug) {
+            id = slug
         } else {
             id = UUID().uuidString
         }
         let named = try container.decodeIfPresent(String.self, forKey: .name)
         title = try container.decodeIfPresent(String.self, forKey: .title) ?? named ?? "Untitled"
         type = try container.decodeIfPresent(String.self, forKey: .type)
+            ?? container.decodeIfPresent(String.self, forKey: .mediaType)
+            ?? container.decodeIfPresent(String.self, forKey: .department)
         if let text = try? container.decode(String.self, forKey: .year) {
             year = text
         } else if let number = try? container.decode(Int.self, forKey: .year) {
@@ -38,6 +44,9 @@ nonisolated struct DiscoveryHit: Decodable, Identifiable {
             year = nil
         }
         poster = try container.decodeIfPresent(String.self, forKey: .poster)
+            ?? container.decodeIfPresent(String.self, forKey: .posterURL)
+            ?? container.decodeIfPresent(String.self, forKey: .photo)
+            ?? container.decodeIfPresent(String.self, forKey: .avatar)
         slug = try container.decodeIfPresent(String.self, forKey: .slug)
         resultType = try container.decodeIfPresent(String.self, forKey: .resultType)
     }
@@ -157,9 +166,21 @@ struct DiscoveryView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    @ViewBuilder
     private func discoveryRow(_ hit: DiscoveryHit) -> some View {
+        if hit.resultType == "profile", let slug = hit.slug, !slug.isEmpty {
+            NavigationLink(value: CreativeRoute.profile(slug)) {
+                discoveryRowBody(hit)
+            }
+            .buttonStyle(.plain)
+        } else {
+            discoveryRowBody(hit)
+        }
+    }
+
+    private func discoveryRowBody(_ hit: DiscoveryHit) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            if let poster = hit.poster, let url = URL(string: poster) {
+            if let poster = hit.poster, poster.hasPrefix("http"), let url = URL(string: poster) {
                 AsyncImage(url: url) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
@@ -225,7 +246,7 @@ struct DiscoveryView: View {
         defer { searching = false }
         do {
             hits = try await client.discoverySearch(query: trimmed, type: type)
-            message = hits.isEmpty ? "No titles matched." : nil
+            message = hits.isEmpty ? (type == "person" ? "No people matched." : "No titles matched.") : nil
         } catch APIError.unauthorized {
             session.signOut()
         } catch APIError.message(let text) {

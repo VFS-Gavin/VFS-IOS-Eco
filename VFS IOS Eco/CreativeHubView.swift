@@ -285,7 +285,16 @@ struct CreativeDestination: View {
         case .discoveryList(let kind):
             DiscoveryListView(session: session, kind: kind)
         case .account(let area):
-            AccountAreaView(area: area)
+            switch area {
+            case .documentRequests:
+                DocumentRequestsView()
+            case .transcriptRequest:
+                TranscriptRequestView()
+            case .t2202Request:
+                T2202FormView(session: session, submitPath: "/api/creative/requests/t2202", prefill: true)
+            default:
+                AccountAreaView(area: area)
+            }
         }
     }
 }

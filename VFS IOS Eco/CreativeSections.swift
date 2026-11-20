@@ -479,13 +479,24 @@ struct DiscoveryListView: View {
 
     private func list(_ rows: [DiscoveryListItem]) -> some View {
         ForEach(rows) { item in
-            VStack(alignment: .leading, spacing: 6) {
-                Text(item.title).font(.headline).foregroundStyle(Color.stoneInk)
-                if let subtitle = item.subtitle, !subtitle.isEmpty {
-                    Text(subtitle).font(.caption).foregroundStyle(accent)
+            HStack(alignment: .top, spacing: 12) {
+                if let poster = item.poster, poster.hasPrefix("http"), let url = URL(string: poster) {
+                    AsyncImage(url: url) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        Color.stoneLine
+                    }
+                    .frame(width: 48, height: 68)
+                    .clipped()
                 }
-                if let body = item.body, !body.isEmpty, body != item.title {
-                    Text(body).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(4)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(item.title).font(.headline).foregroundStyle(Color.stoneInk)
+                    if let subtitle = item.subtitle, !subtitle.isEmpty {
+                        Text(subtitle).font(.caption).foregroundStyle(accent)
+                    }
+                    if let body = item.body, !body.isEmpty, body != item.title {
+                        Text(body).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(4)
+                    }
                 }
             }
             .padding(14)

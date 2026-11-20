@@ -269,6 +269,8 @@ struct ContactUpdateFormView: View {
 struct T2202FormView: View {
     @Bindable var session: AppSession
     var client: APIClient = APIClient()
+    var submitPath = "/api/welcome/t2202-request"
+    var prefill = false
 
     @State private var fullName = ""
     @State private var studentId = ""
@@ -319,6 +321,11 @@ struct T2202FormView: View {
             }
         }
         .navigationTitle("T2202 Request")
+        .onAppear {
+            guard prefill, let user = session.account?.user else { return }
+            if fullName.isEmpty { fullName = user.name }
+            if email.isEmpty { email = user.email }
+        }
     }
 
     private var ready: Bool {
@@ -341,7 +348,7 @@ struct T2202FormView: View {
         ]
         if !province.isEmpty { body["province"] = province }
         await post {
-            try await client.submitJSON(path: "/api/welcome/t2202-request", body: body)
+            try await client.submitJSON(path: submitPath, body: body)
         }
     }
 }
