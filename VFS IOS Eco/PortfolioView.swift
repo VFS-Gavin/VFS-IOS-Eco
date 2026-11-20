@@ -56,7 +56,7 @@ struct PortfolioScreen: View {
             }
             .toolbar {
                 ThemeToggle()
-                Button("Sign out") { session.signOut() }
+                AccountMenu(session: session)
             }
             .onAppear {
                 if !sections.contains(section), let first = sections.first {

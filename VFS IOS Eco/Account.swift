@@ -140,6 +140,25 @@ enum CreativeRoute: Hashable {
     case collabs
     case jobs
     case area(CreativeHubKind)
+    case account(AccountArea)
+}
+
+enum AccountArea: String, Hashable {
+    case managePortfolio
+    case liked
+    case profileSettings
+    case showcase
+    case documentRequests
+
+    var title: String {
+        switch self {
+        case .managePortfolio: "Manage Portfolio"
+        case .liked: "My Liked"
+        case .profileSettings: "Profile Settings"
+        case .showcase: "My Showcase"
+        case .documentRequests: "Document Requests"
+        }
+    }
 }
 
 enum CreativeHubKind: String, Hashable, CaseIterable {

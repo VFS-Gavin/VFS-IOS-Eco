@@ -24,15 +24,15 @@ final class VFS_IOS_EcoUITests: XCTestCase {
 
         openDevAccount("alumni", in: app)
         XCTAssertTrue(app.navigationBars["Creative ECOsystem"].waitForExistence(timeout: 45))
-        app.buttons["Sign out"].tap()
+        signOut(app)
 
         openDevAccount("industry", in: app)
         XCTAssertTrue(app.staticTexts["Portfolio, collabs, and jobs"].waitForExistence(timeout: 45))
-        app.buttons["Sign out"].tap()
+        signOut(app)
 
         openDevAccount("pending", in: app)
         XCTAssertTrue(app.navigationBars["Welcome Hub"].waitForExistence(timeout: 45))
-        app.buttons["Sign out"].tap()
+        signOut(app)
 
         openDevAccount("student", in: app)
         XCTAssertTrue(app.navigationBars["Welcome Hub"].waitForExistence(timeout: 45))
@@ -40,10 +40,18 @@ final class VFS_IOS_EcoUITests: XCTestCase {
 
     @MainActor
     private func signOutIfNeeded(_ app: XCUIApplication) {
+        let menu = app.buttons["account-menu"]
+        guard menu.waitForExistence(timeout: 3) else { return }
+        signOut(app)
+    }
+
+    private func signOut(_ app: XCUIApplication) {
         let signOut = app.buttons["Sign out"]
-        if signOut.waitForExistence(timeout: 3) {
-            signOut.tap()
+        if !signOut.exists {
+            app.buttons["account-menu"].tap()
         }
+        XCTAssertTrue(signOut.waitForExistence(timeout: 3))
+        signOut.tap()
     }
 
     @MainActor

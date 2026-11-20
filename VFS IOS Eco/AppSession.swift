@@ -29,6 +29,7 @@ final class AppSession {
     var account: Account?
     var welcome: WelcomeHome?
     var isBusy = false
+    var queuedRoute: CreativeRoute?
 
     enum Phase {
         case signedOut

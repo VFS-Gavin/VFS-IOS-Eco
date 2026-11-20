@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct CreativeHubCard: Identifiable {
     var kind: CreativeHubKind
@@ -6,6 +7,7 @@ struct CreativeHubCard: Identifiable {
     var plain: String
     var italic: String
     var accent: Color
+    var image: String
 
     var id: CreativeHubKind { kind }
 
@@ -23,21 +25,36 @@ enum CreativeHubCatalog {
     static let brand = Color(red: 164 / 255, green: 16 / 255, blue: 52 / 255)
 
     static let student: [CreativeHubCard] = [
-        CreativeHubCard(kind: .portfolio, label: "Portfolios", plain: "Get Your Work", italic: "Seen", accent: .ecoOrange),
-        CreativeHubCard(kind: .jobs, label: "Industry Opportunities", plain: "Find Current", italic: "Industry Opportunities", accent: .jobGold),
-        CreativeHubCard(kind: .collabs, label: "Student & Alumni Projects", plain: "Crew Up,", italic: "Collaborate", accent: .collabPurple),
-        CreativeHubCard(kind: .workshops, label: "Classes, Workshops and On Campus", plain: "Level up your skills", italic: "and connections", accent: .pagePink),
-        CreativeHubCard(kind: .funding, label: "Funding", plain: "Fund Your", italic: "Creative Vision", accent: .pageEmerald),
-        CreativeHubCard(kind: .facilities, label: "Resources", plain: "Access Professional", italic: "Resources", accent: Color(red: 8 / 255, green: 145 / 255, blue: 178 / 255)),
-        CreativeHubCard(kind: .studios, label: "VFS Studios Projects", plain: "Student Crews,", italic: "Real Clients", accent: brand),
-        CreativeHubCard(kind: .discovery, label: "Creative Engine", plain: "Discover, Connect, Create on", italic: "Films, Games, and New Ideas", accent: Color(red: 14 / 255, green: 165 / 255, blue: 233 / 255)),
+        CreativeHubCard(kind: .portfolio, label: "Portfolios", plain: "Get Your Work", italic: "Seen", accent: .ecoOrange, image: "portfolio-cover"),
+        CreativeHubCard(kind: .jobs, label: "Industry Opportunities", plain: "Find Current", italic: "Industry Opportunities", accent: .jobGold, image: "industry-ca"),
+        CreativeHubCard(kind: .collabs, label: "Student & Alumni Projects", plain: "Crew Up,", italic: "Collaborate", accent: .collabPurple, image: "student-alumni-cover"),
+        CreativeHubCard(kind: .workshops, label: "Classes, Workshops and On Campus", plain: "Level up your skills", italic: "and connections", accent: .pagePink, image: "classes-mkd"),
+        CreativeHubCard(kind: .funding, label: "Funding", plain: "Fund Your", italic: "Creative Vision", accent: .pageEmerald, image: "funding-ac"),
+        CreativeHubCard(kind: .facilities, label: "Resources", plain: "Access Professional", italic: "Resources", accent: Color(red: 8 / 255, green: 145 / 255, blue: 178 / 255), image: "resources-cover"),
+        CreativeHubCard(kind: .studios, label: "VFS Studios Projects", plain: "Student Crews,", italic: "Real Clients", accent: brand, image: "workshops-cover"),
+        CreativeHubCard(kind: .discovery, label: "Creative Engine", plain: "Discover, Connect, Create on", italic: "Films, Games, and New Ideas", accent: Color(red: 14 / 255, green: 165 / 255, blue: 233 / 255), image: "discovery-cover"),
     ]
 
     static let industry: [CreativeHubCard] = [
-        CreativeHubCard(kind: .portfolio, label: "Portfolio", plain: "Browse talent", italic: "by person", accent: .ecoOrange),
-        CreativeHubCard(kind: .collabs, label: "Student & Alumni Projects", plain: "Open", italic: "project calls", accent: .collabPurple),
-        CreativeHubCard(kind: .jobs, label: "Jobs", plain: "Browse", italic: "openings", accent: .jobGold),
+        CreativeHubCard(kind: .portfolio, label: "Portfolio", plain: "Browse talent", italic: "by person", accent: .ecoOrange, image: "portfolio-cover"),
+        CreativeHubCard(kind: .collabs, label: "Student & Alumni Projects", plain: "Open", italic: "project calls", accent: .collabPurple, image: "collabs-cover"),
+        CreativeHubCard(kind: .jobs, label: "Jobs", plain: "Browse", italic: "openings", accent: .jobGold, image: "jobs-cover"),
     ]
+
+    static func cover(_ name: String) -> UIImage? {
+        if let image = UIImage(named: name) { return image }
+        for ext in ["jpg", "png"] {
+            if let url = Bundle.main.url(forResource: name, withExtension: ext, subdirectory: "CreativeCovers"),
+               let image = UIImage(contentsOfFile: url.path) {
+                return image
+            }
+            if let url = Bundle.main.url(forResource: name, withExtension: ext),
+               let image = UIImage(contentsOfFile: url.path) {
+                return image
+            }
+        }
+        return nil
+    }
 
     static func isOpen(_ kind: CreativeHubKind, account: Account?) -> Bool {
         guard let account else { return false }
@@ -56,6 +73,9 @@ enum CreativeHubCatalog {
 struct CreativeHubScreen: View {
     @Bindable var session: AppSession
     var industry: Bool
+    var openWelcome: (() -> Void)?
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var path = NavigationPath()
 
     private var cards: [CreativeHubCard] {
         let source = industry ? CreativeHubCatalog.industry : CreativeHubCatalog.student
@@ -66,7 +86,7 @@ struct CreativeHubScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     if industry {
@@ -131,41 +151,79 @@ struct CreativeHubScreen: View {
             }
             .toolbar {
                 ThemeToggle()
-                Button("Sign out") { session.signOut() }
+                AccountMenu(session: session, openWelcome: openWelcome) { route in
+                    path.append(route)
+                }
             }
+            .onAppear(perform: openQueuedRoute)
             .accessibilityIdentifier("creative-hub")
         }
     }
 
+    private func openQueuedRoute() {
+        guard let route = session.queuedRoute else { return }
+        session.queuedRoute = nil
+        path.append(route)
+    }
+
     private func cardFace(_ card: CreativeHubCard, open: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(card.label.uppercased())
-                .font(.system(size: 11, weight: .bold))
-                .tracking(1.2)
-                .foregroundStyle(card.accent)
-            Text(card.plain)
-                .font(.system(size: 26, weight: .bold, design: .serif))
-                .foregroundStyle(Color.stoneInk)
-            Text(card.italic)
-                .font(.system(size: 26, weight: .bold, design: .serif))
-                .italic()
-                .foregroundStyle(card.accent)
+        ZStack(alignment: .bottomLeading) {
+            if let image = CreativeHubCatalog.cover(card.image) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity, minHeight: 210, maxHeight: 210)
+                    .clipped()
+            } else {
+                Color.card.frame(height: 210)
+            }
+            LinearGradient(
+                colors: [fadeColor, fadeColor.opacity(0.72), fadeColor.opacity(0.08), .clear],
+                startPoint: .bottom,
+                endPoint: .top
+            )
+            VStack(alignment: .leading, spacing: 2) {
+                Text(card.plain)
+                    .font(.system(size: 26, weight: .bold, design: .serif))
+                    .foregroundStyle(Color.stoneInk)
+                Text(card.italic)
+                    .font(.system(size: 26, weight: .bold, design: .serif))
+                    .italic()
+                    .foregroundStyle(card.accent)
+            }
+            .padding(16)
+            .shadow(color: fadeColor.opacity(0.8), radius: 8, y: 2)
             if !open {
-                Text("Under Construction")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.stoneMuted)
-                    .padding(.top, 6)
-                Text("Coming soon to the Creative ECOsystem")
-                    .font(.caption)
-                    .foregroundStyle(Color.stoneMuted)
+                VStack(spacing: 8) {
+                    Text("Under Construction")
+                        .font(.caption.weight(.bold))
+                        .textCase(.uppercase)
+                        .tracking(1.4)
+                        .foregroundStyle(Color.stoneInk)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color.card)
+                        .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+                    Text("Coming soon to the Creative ECOsystem")
+                        .font(.caption)
+                        .foregroundStyle(Color.stoneMuted)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(fadeColor.opacity(0.82))
             }
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.card.opacity(open ? 1 : 0.55))
+        .frame(maxWidth: .infinity, minHeight: 210)
+        .clipped()
         .overlay(alignment: .leading) { Rectangle().fill(card.accent).frame(width: 4) }
         .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
-        .opacity(open ? 1 : 0.7)
+    }
+
+    private var fadeColor: Color {
+        colorScheme == .dark
+            ? Color(red: 17 / 255, green: 16 / 255, blue: 16 / 255)
+            : Color(red: 250 / 255, green: 250 / 255, blue: 249 / 255)
     }
 }
 
@@ -193,7 +251,30 @@ struct CreativeDestination: View {
             JobsView(session: session)
         case .area(let kind):
             CreativeAreaView(kind: kind)
+        case .account(let area):
+            AccountAreaView(area: area)
         }
+    }
+}
+
+struct AccountAreaView: View {
+    var area: AccountArea
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(area.title)
+                .font(.system(size: 36, weight: .bold, design: .serif))
+                .foregroundStyle(Color.stoneInk)
+            Text("This page is on the website. The app screen for it is next.")
+                .font(.body)
+                .foregroundStyle(Color.stoneMuted)
+            Spacer()
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.stone)
+        .navigationTitle(area.title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
