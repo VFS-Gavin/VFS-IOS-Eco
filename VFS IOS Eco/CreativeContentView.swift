@@ -166,8 +166,16 @@ struct CollabsView: View {
     @State private var board: CollabBoard?
     @State private var collabs: [CollabCard] = []
     @State private var search = ""
+    @State private var type = ""
+    @State private var role = ""
+    @State private var paidOnly = false
+    @State private var roleType = ""
+    @State private var archived = false
     @State private var phase: LoadPhase = .loading
     @State private var loadingMore = false
+
+    private let projectTypes = ["Short Film", "Music Video", "Animation", "Game", "Web Series", "Podcast", "ADR / Redubbing", "Portfolio Piece", "Other"]
+    private let commonRoles = ["Actor", "Director", "Producer", "Cinematographer", "Editor", "Sound Designer", "Composer", "VFX Artist", "Makeup Artist", "Hair Stylist", "Writer", "Animator", "Voice Actor", "Gaffer", "Set Designer", "3D Artist", "Colorist", "Storyboard Artist"]
 
     var body: some View {
         ScrollView {
@@ -185,9 +193,10 @@ struct CollabsView: View {
                     accentColor: .collabPurple,
                     detail: "Find collaborators for your next project: short films, games, music videos, and beyond."
                 )
-                CreativeSearchField(placeholder: "Search collabs", text: $search, identifier: "collab-search") {
+                CreativeSearchField(placeholder: "Search by project name, description, or role…", text: $search, identifier: "collab-search") {
                     Task { await reload() }
                 }
+                filterRow
 
                 switch phase {
                 case .loading:
@@ -195,8 +204,13 @@ struct CollabsView: View {
                 case .failed(let message):
                     Text(message).foregroundStyle(Color.stoneInk)
                 case .ready:
+                    if let total = board?.collabs.total, total > 0 {
+                        Text("\(total) post\(total == 1 ? "" : "s")")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.stoneMuted)
+                    }
                     if collabs.isEmpty {
-                        Text("No collabs found.")
+                        Text(filtersActive ? "No posts match your filters." : "No collaborations found.")
                             .font(.body)
                             .foregroundStyle(Color.stoneMuted)
                     } else {
@@ -211,39 +225,139 @@ struct CollabsView: View {
                                 Task { await loadMore() }
                             }
                             .buttonStyle(.bordered)
-                            .tint(Color.ecoOrange)
+                            .tint(Color.collabPurple)
                             .disabled(loadingMore)
                         }
                     }
                 }
+                SiteFooter(session: session)
             }
             .padding(20)
         }
         .background(Color.stone)
+        .navigationTitle("Student & Alumni Projects")
+        .navigationBarTitleDisplayMode(.inline)
         .task { await reload() }
     }
 
-    private func collabCard(_ collab: CollabCard) -> some View {
-        SharpCard(bar: .collabPurple) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(collab.title).font(.system(.headline, design: .serif)).foregroundStyle(Color.stoneInk)
-                if let role = collab.role, !role.isEmpty {
-                    Text(role).font(.subheadline).foregroundStyle(Color.collabPurple)
-                }
-                if let owner = collab.ownerName, !owner.isEmpty {
-                    Text(owner).font(.caption).foregroundStyle(Color.stoneMuted)
-                }
-                if let deadline = collab.deadline, !deadline.isEmpty {
-                    Text(deadline).font(.caption).foregroundStyle(Color.stoneMuted)
+    private var filtersActive: Bool {
+        !type.isEmpty || !role.isEmpty || paidOnly || !roleType.isEmpty || archived || !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var filterRow: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    filterChip("Active", on: !archived) { archived = false; Task { await reload() } }
+                    filterChip("Archived", on: archived) { archived = true; Task { await reload() } }
+                    filterChip("Paid", on: paidOnly) { paidOnly.toggle(); Task { await reload() } }
+                    filterChip("Crew Calls", on: roleType == "crew") { roleType = roleType == "crew" ? "" : "crew"; Task { await reload() } }
+                    filterChip("Casting Calls", on: roleType == "cast") { roleType = roleType == "cast" ? "" : "cast"; Task { await reload() } }
                 }
             }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    filterChip("All types", on: type.isEmpty) { type = ""; Task { await reload() } }
+                    ForEach(projectTypes, id: \.self) { item in
+                        filterChip(item, on: type == item) { type = item; Task { await reload() } }
+                    }
+                }
+            }
+            Menu {
+                Button("All Roles") { role = ""; Task { await reload() } }
+                ForEach(commonRoles, id: \.self) { item in
+                    Button(item) { role = item; Task { await reload() } }
+                }
+            } label: {
+                Text(role.isEmpty ? "All Roles" : role)
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .foregroundStyle(role.isEmpty ? Color.stoneMuted : Color.collabPurple)
+                    .background(role.isEmpty ? Color.card : Color.collabPurple.opacity(0.12))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(role.isEmpty ? Color.stoneLine : Color.collabPurple.opacity(0.45), lineWidth: 1))
+            }
+            if filtersActive {
+                Button("Clear all") {
+                    type = ""
+                    role = ""
+                    paidOnly = false
+                    roleType = ""
+                    archived = false
+                    search = ""
+                    Task { await reload() }
+                }
+                .buttonStyle(.plain)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+            }
         }
+    }
+
+    private func filterChip(_ title: String, on: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .foregroundStyle(on ? Color.collabPurple : Color.stoneMuted)
+                .background(on ? Color.collabPurple.opacity(0.12) : Color.card)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(on ? Color.collabPurple.opacity(0.45) : Color.stoneLine, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func collabCard(_ collab: CollabCard) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let url = PortfolioProject.coverURL(collab.coverURL) {
+                AsyncImage(url: url) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    Color.stoneLine
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 180)
+                .clipped()
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                if let type = collab.type, !type.isEmpty {
+                    Text(type)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color.stoneInk)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.stone)
+                        .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+                }
+                Text(collab.title)
+                    .font(.system(.headline, design: .serif))
+                    .foregroundStyle(Color.stoneInk)
+                    .multilineTextAlignment(.leading)
+                if let role = collab.role, !role.isEmpty {
+                    let labels = role.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                    FlowRoles(labels: Array(labels.prefix(3)), extra: max(0, labels.count - 3))
+                }
+                HStack(spacing: 6) {
+                    if let owner = collab.ownerName, !owner.isEmpty {
+                        Text(owner).font(.caption).foregroundStyle(Color.stoneMuted)
+                    }
+                    if let deadline = collab.deadline, !deadline.isEmpty {
+                        Text("Due \(deadline)").font(.caption.weight(.semibold)).foregroundStyle(Color.collabPurple)
+                    }
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(Color.card)
+        .overlay(alignment: .leading) { Rectangle().fill(Color.collabPurple).frame(width: 3) }
+        .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
     }
 
     private func reload() async {
         phase = .loading
         do {
-            let page = try await client.collabs(search: search, page: 1)
+            let page = try await client.collabs(search: search, page: 1, type: type, role: role, paidOnly: paidOnly, roleType: roleType, board: archived ? "archived" : "active")
             board = page
             collabs = page.collabs.data
             phase = .ready
@@ -261,13 +375,36 @@ struct CollabsView: View {
         loadingMore = true
         defer { loadingMore = false }
         do {
-            let page = try await client.collabs(search: search, page: board.collabs.currentPage + 1)
+            let page = try await client.collabs(search: search, page: board.collabs.currentPage + 1, type: type, role: role, paidOnly: paidOnly, roleType: roleType, board: archived ? "archived" : "active")
             self.board = page
             let existing = Set(collabs.map(\.id))
             collabs.append(contentsOf: page.collabs.data.filter { !existing.contains($0.id) })
         } catch APIError.unauthorized {
             session.signOut()
         } catch {
+        }
+    }
+}
+
+private struct FlowRoles: View {
+    var labels: [String]
+    var extra: Int
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(Array(labels.enumerated()), id: \.offset) { _, label in
+                Text(label)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Color.collabPurple)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.collabPurple.opacity(0.35), lineWidth: 1))
+            }
+            if extra > 0 {
+                Text("+\(extra)")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Color.stoneMuted)
+            }
         }
     }
 }

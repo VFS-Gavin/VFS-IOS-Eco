@@ -6,6 +6,10 @@ struct AccountMenu: View {
     var push: ((CreativeRoute) -> Void)?
     @Environment(\.openURL) private var openURL
     @State private var open = false
+    @State private var showingCalendar = false
+    @State private var events: [CalendarItem] = []
+    @State private var calendarMessage: String?
+    @State private var calendarLoading = false
 
     init(session: AppSession, openWelcome: (() -> Void)? = nil, push: ((CreativeRoute) -> Void)? = nil) {
         self.session = session
@@ -13,8 +17,13 @@ struct AccountMenu: View {
         self.push = push
     }
 
+    private var showsCalendar: Bool {
+        session.account?.showsCreative == true && session.account?.creativeIsIndustry != true
+    }
+
     var body: some View {
         Button {
+            showingCalendar = false
             open = true
         } label: {
             HStack(spacing: 4) {
@@ -32,50 +41,157 @@ struct AccountMenu: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("account-menu")
         .accessibilityLabel("Account")
-        .popover(isPresented: $open, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
-            panel
-                .presentationCompactAdaptation(.popover)
-                .presentationBackground(Color.card)
+        .fullScreenCover(isPresented: $open) {
+            ZStack(alignment: .topTrailing) {
+                Color.black.opacity(0.28)
+                    .ignoresSafeArea()
+                    .onTapGesture { open = false }
+                panel
+                    .padding(.top, 8)
+                    .padding(.trailing, 12)
+                    .padding(.leading, 36)
+            }
+            .background(MenuClearBackground())
+            .presentationBackground(.clear)
         }
     }
 
     private var panel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Rectangle().fill(Color.ecoOrange).frame(height: 3)
-            if let user = session.account?.user {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(user.name)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.stoneInk)
-                        .lineLimit(1)
-                    Text(user.email)
-                        .font(.caption)
-                        .foregroundStyle(Color.stoneMuted)
-                        .lineLimit(1)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Divider().overlay(Color.stoneLine)
-            }
-            if session.account?.showsCreative == true && session.account?.creative == "full" {
-                accountItems
-                Divider().overlay(Color.stoneLine).padding(.horizontal, 16)
-            }
-            row("Report a Bug / Suggest a Feature", tint: Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255)) {
-                open = false
-                if let url = URL(string: "https://forms.gle/9QXW6pAXUk7WtLjL6") {
-                    openURL(url)
-                }
-            }
-            Divider().overlay(Color.stoneLine).padding(.horizontal, 16)
-            row("Sign out", tint: Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255)) {
-                open = false
-                session.signOut()
+            Rectangle().fill(showingCalendar ? Color(red: 219 / 255, green: 39 / 255, blue: 119 / 255) : Color.ecoOrange).frame(height: 3)
+            if showingCalendar {
+                calendarPanel
+            } else {
+                accountPanel
             }
         }
-        .frame(width: 280)
+        .frame(maxWidth: 320)
         .background(Color.card)
+        .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+        .shadow(color: Color.black.opacity(0.18), radius: 16, y: 8)
+    }
+
+    private var accountPanel: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if let user = session.account?.user {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(user.name)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.stoneInk)
+                            .lineLimit(2)
+                        Text(user.email)
+                            .font(.caption)
+                            .foregroundStyle(Color.stoneMuted)
+                            .lineLimit(2)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Divider().overlay(Color.stoneLine)
+                }
+                if showsCalendar {
+                    row("Calendar", tint: Color(red: 219 / 255, green: 39 / 255, blue: 119 / 255)) {
+                        showingCalendar = true
+                        Task { await loadCalendar() }
+                    }
+                    Divider().overlay(Color.stoneLine).padding(.horizontal, 16)
+                }
+                if session.account?.showsCreative == true && session.account?.creative == "full" {
+                    accountItems
+                    Divider().overlay(Color.stoneLine).padding(.horizontal, 16)
+                }
+                row("Report a Bug / Suggest a Feature", tint: Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255)) {
+                    open = false
+                    if let url = URL(string: "https://forms.gle/9QXW6pAXUk7WtLjL6") {
+                        openURL(url)
+                    }
+                }
+                Divider().overlay(Color.stoneLine).padding(.horizontal, 16)
+                row("Sign out", tint: Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255)) {
+                    open = false
+                    session.signOut()
+                }
+            }
+        }
+        .frame(maxHeight: 520)
+    }
+
+    private var calendarPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Button("Account") { showingCalendar = false }
+                    .buttonStyle(.plain)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color(red: 219 / 255, green: 39 / 255, blue: 119 / 255))
+                Spacer()
+                Text("CALENDAR")
+                    .font(.caption.weight(.semibold))
+                    .tracking(1.2)
+                    .foregroundStyle(Color.stoneMuted)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            Divider().overlay(Color.stoneLine)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    if calendarLoading {
+                        ProgressView().frame(maxWidth: .infinity).padding(24)
+                    } else if let calendarMessage {
+                        Text(calendarMessage)
+                            .font(.caption)
+                            .foregroundStyle(Color.stoneMuted)
+                            .padding(16)
+                    } else if events.isEmpty {
+                        Text("Nothing new on the calendar right now.")
+                            .font(.caption)
+                            .foregroundStyle(Color.stoneMuted)
+                            .frame(maxWidth: .infinity)
+                            .padding(24)
+                    } else {
+                        ForEach(events) { item in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 6) {
+                                    if let date = item.dateLabel, !date.isEmpty {
+                                        Text(date)
+                                            .font(.caption2.weight(.semibold))
+                                            .foregroundStyle(Color.stoneMuted)
+                                    }
+                                    ForEach(item.badges ?? [], id: \.self) { badge in
+                                        Text(badge.uppercased())
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(Color.white)
+                                            .padding(.horizontal, 5)
+                                            .padding(.vertical, 2)
+                                            .background(Color(red: 219 / 255, green: 39 / 255, blue: 119 / 255))
+                                    }
+                                }
+                                Text(item.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color.stoneInk)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                if let when = item.when, !when.isEmpty {
+                                    Text(item.location.map { "\(when) · \($0)" } ?? when)
+                                        .font(.caption2)
+                                        .foregroundStyle(Color.stoneMuted)
+                                }
+                                if let description = item.description, !description.isEmpty {
+                                    Text(description)
+                                        .font(.caption)
+                                        .foregroundStyle(Color.stoneMuted)
+                                        .lineLimit(2)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            Divider().overlay(Color.stoneLine)
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: 420)
+        }
     }
 
     @ViewBuilder
@@ -124,8 +240,42 @@ struct AccountMenu: View {
         push?(route)
     }
 
+    private func loadCalendar() async {
+        calendarLoading = true
+        calendarMessage = nil
+        defer { calendarLoading = false }
+        do {
+            events = try await APIClient().calendar()
+            calendarMessage = nil
+        } catch APIError.unauthorized {
+            open = false
+            session.signOut()
+        } catch APIError.message(let text) {
+            events = []
+            calendarMessage = text
+        } catch {
+            events = []
+            calendarMessage = "The calendar isn't available from the app yet."
+        }
+    }
+
     private var initial: String {
         let name = session.account?.user.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return String(name.first ?? "?").uppercased()
+    }
+}
+
+private struct MenuClearBackground: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .clear
+        DispatchQueue.main.async {
+            view.superview?.superview?.backgroundColor = .clear
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        uiView.backgroundColor = .clear
     }
 }

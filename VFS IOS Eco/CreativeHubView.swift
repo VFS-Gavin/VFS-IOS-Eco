@@ -8,6 +8,7 @@ struct CreativeHubCard: Identifiable {
     var italic: String
     var accent: Color
     var image: String
+    var detail: String = ""
 
     var id: CreativeHubKind { kind }
 
@@ -36,9 +37,9 @@ enum CreativeHubCatalog {
     ]
 
     static let industry: [CreativeHubCard] = [
-        CreativeHubCard(kind: .portfolio, label: "Portfolio", plain: "Browse talent", italic: "by person", accent: .ecoOrange, image: "portfolio-cover"),
-        CreativeHubCard(kind: .collabs, label: "Student & Alumni Projects", plain: "Open", italic: "project calls", accent: .collabPurple, image: "collabs-cover"),
-        CreativeHubCard(kind: .jobs, label: "Jobs", plain: "Browse", italic: "openings", accent: .jobGold, image: "jobs-cover"),
+        CreativeHubCard(kind: .portfolio, label: "Portfolio", plain: "Browse talent by person", italic: "", accent: .ecoOrange, image: "portfolio-cover", detail: "Public student and alumni profiles with professional work marked for industry review."),
+        CreativeHubCard(kind: .collabs, label: "Student & Alumni Projects", plain: "Open project calls", italic: "", accent: .collabPurple, image: "collabs-cover", detail: "See what crews are building and which roles still need filling."),
+        CreativeHubCard(kind: .jobs, label: "Jobs", plain: "Browse openings", italic: "", accent: .jobGold, image: "jobs-cover", detail: "The same industry partner roles and production board students use."),
     ]
 
     static func cover(_ name: String) -> UIImage? {
@@ -186,17 +187,28 @@ struct CreativeHubScreen: View {
                 startPoint: .bottom,
                 endPoint: .top
             )
-            VStack(alignment: .leading, spacing: 2) {
-                Text(card.plain)
-                    .font(.system(size: 26, weight: .bold, design: .serif))
-                    .foregroundStyle(Color.stoneInk)
-                Text(card.italic)
-                    .font(.system(size: 26, weight: .bold, design: .serif))
-                    .italic()
-                    .foregroundStyle(card.accent)
+            VStack(alignment: .leading, spacing: 6) {
+                if card.detail.isEmpty {
+                    Text(card.label)
+                        .font(.system(size: card.kind == .discovery ? 34 : 28, weight: .bold, design: .serif))
+                        .foregroundStyle(card.accent)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(card.label)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(card.accent)
+                    Text(card.plain)
+                        .font(.system(size: 26, weight: .bold, design: .serif))
+                        .foregroundStyle(Color.stoneInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(card.detail)
+                        .font(.caption)
+                        .foregroundStyle(Color.stoneMuted)
+                        .lineLimit(3)
+                }
             }
             .padding(16)
-            .shadow(color: fadeColor.opacity(0.8), radius: 8, y: 2)
+            .shadow(color: fadeColor.opacity(0.85), radius: 8, y: 2)
             if !open {
                 VStack(spacing: 8) {
                     Text("Under Construction")
