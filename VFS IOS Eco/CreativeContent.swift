@@ -307,6 +307,7 @@ nonisolated struct DiscoveryListItem: Decodable, Identifiable, Equatable {
     var title: String
     var subtitle: String?
     var body: String?
+    var poster: String?
 
     enum CodingKeys: String, CodingKey {
         case id, title, text, name, body, review, description, category, likes, rating, year
@@ -314,6 +315,7 @@ nonisolated struct DiscoveryListItem: Decodable, Identifiable, Equatable {
         case highlightCount = "highlight_count"
         case viewerCount = "viewer_count"
         case favoriteCount = "fav_count"
+        case posterURL = "poster_url"
         case creator, user
     }
 
@@ -348,6 +350,7 @@ nonisolated struct DiscoveryListItem: Decodable, Identifiable, Equatable {
         }
         let creator = try container.decodeIfPresent(DiscoveryPerson.self, forKey: .creator)
         let user = try container.decodeIfPresent(DiscoveryPerson.self, forKey: .user)
+        poster = try container.decodeIfPresent(String.self, forKey: .posterURL) ?? creator?.avatar ?? user?.avatar
         let category = try container.decodeIfPresent(String.self, forKey: .category)
         var bits: [String] = []
         if let name = creator?.name ?? user?.name, !name.isEmpty { bits.append(name) }
@@ -379,6 +382,7 @@ nonisolated struct DiscoveryListItem: Decodable, Identifiable, Equatable {
 
 nonisolated struct DiscoveryPerson: Decodable, Equatable {
     var name: String?
+    var avatar: String?
 }
 
 nonisolated struct DiscoveryListResponse: Decodable {

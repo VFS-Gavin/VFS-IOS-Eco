@@ -175,6 +175,8 @@ enum AccountArea: String, Hashable {
     case profileSettings
     case showcase
     case documentRequests
+    case transcriptRequest
+    case t2202Request
     case terms
 
     var title: String {
@@ -184,6 +186,8 @@ enum AccountArea: String, Hashable {
         case .profileSettings: "Profile Settings"
         case .showcase: "My Showcase"
         case .documentRequests: "Document Requests"
+        case .transcriptRequest: "Transcript & Diploma Request"
+        case .t2202Request: "T2202 Tax Receipt"
         case .terms: "Terms & Privacy"
         }
     }
