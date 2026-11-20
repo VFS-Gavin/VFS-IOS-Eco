@@ -351,6 +351,14 @@ struct CreativeDestination: View {
             ProductionDetailView(session: session, id: id)
         case .calendarEvent(let id):
             CalendarEventView(session: session, id: id)
+        case .facility(let id):
+            FacilityDetailView(session: session, id: id)
+        case .grant(let id):
+            GrantDetailView(session: session, id: id)
+        case .workshopCourse(let category, let slug):
+            WorkshopCourseView(session: session, category: category, slug: slug)
+        case .workshopEvent(let category, let title):
+            WorkshopEventView(session: session, category: category, title: title)
         case .account(let area):
             switch area {
             case .documentRequests:

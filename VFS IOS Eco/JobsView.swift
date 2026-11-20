@@ -19,6 +19,9 @@ struct JobsView: View {
     @State private var level = ""
     @State private var remote = false
     @State private var sort = ""
+    @State private var program = ""
+    @State private var company = ""
+    @State private var city = ""
     @State private var region = ""
     @State private var phase: LoadPhase = .loading
     @State private var loadingJobs = false
@@ -132,6 +135,16 @@ struct JobsView: View {
             chipRow(types, selected: type) { type = $0; Task { await reload() } }
             chipRow(levels, selected: level) { level = $0; Task { await reload() } }
             chipRow(sorts, selected: sort) { sort = $0; Task { await reload() } }
+            chipRow([("", "All Programs")] + ProfilePrograms.options.map { ($0.key, $0.label) }, selected: program) { program = $0; Task { await reload() } }
+            TextField("Studio", text: $company)
+                .textFieldStyle(.roundedBorder)
+                .onSubmit { Task { await reload() } }
+            TextField("City", text: $city)
+                .textFieldStyle(.roundedBorder)
+                .onSubmit { Task { await reload() } }
+            Button("Apply studio and city") { Task { await reload() } }
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.jobGold)
             Button(remote ? "Remote only" : "Remote") {
                 remote.toggle()
                 Task { await reload() }
@@ -257,7 +270,7 @@ struct JobsView: View {
     private func reload() async {
         phase = .loading
         do {
-            let page = try await client.jobs(search: search, page: 1, partnerPage: 1, type: type, remote: remote, level: level, sort: sort)
+            let page = try await client.jobs(search: search, page: 1, partnerPage: 1, type: type, remote: remote, level: level, sort: sort, program: program, company: company.trimmingCharacters(in: .whitespacesAndNewlines), city: city.trimmingCharacters(in: .whitespacesAndNewlines))
             feed = page
             jobs = page.jobs.data
             partnerJobs = page.partnerJobs.data
@@ -276,7 +289,7 @@ struct JobsView: View {
         loadingJobs = true
         defer { loadingJobs = false }
         do {
-            let page = try await client.jobs(search: search, page: feed.jobs.currentPage + 1, partnerPage: feed.partnerJobs.currentPage, type: type, remote: remote, level: level, sort: sort)
+            let page = try await client.jobs(search: search, page: feed.jobs.currentPage + 1, partnerPage: feed.partnerJobs.currentPage, type: type, remote: remote, level: level, sort: sort, program: program, company: company.trimmingCharacters(in: .whitespacesAndNewlines), city: city.trimmingCharacters(in: .whitespacesAndNewlines))
             self.feed = JobsBoard(jobs: page.jobs, partnerJobs: feed.partnerJobs, productions: page.productions)
             let existing = Set(jobs.map(\.id))
             jobs.append(contentsOf: page.jobs.data.filter { !existing.contains($0.id) })

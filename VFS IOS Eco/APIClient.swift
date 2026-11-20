@@ -489,13 +489,16 @@ nonisolated struct APIClient {
         try await authorized(CollabDetailResponse.self, path: "/api/creative/collabs/\(id)").collab
     }
 
-    func jobs(search: String, page: Int, partnerPage: Int, type: String = "", remote: Bool = false, level: String = "", sort: String = "") async throws -> JobsBoard {
+    func jobs(search: String, page: Int, partnerPage: Int, type: String = "", remote: Bool = false, level: String = "", sort: String = "", program: String = "", company: String = "", city: String = "") async throws -> JobsBoard {
         var query = pageQuery(search: search, page: page)
         query.append(URLQueryItem(name: "partner_page", value: String(partnerPage)))
         if !type.isEmpty { query.append(URLQueryItem(name: "type", value: type)) }
         if remote { query.append(URLQueryItem(name: "remote", value: "1")) }
         if !level.isEmpty { query.append(URLQueryItem(name: "level", value: level)) }
         if !sort.isEmpty { query.append(URLQueryItem(name: "sort", value: sort)) }
+        if !program.isEmpty { query.append(URLQueryItem(name: "program", value: program)) }
+        if !company.isEmpty { query.append(URLQueryItem(name: "company", value: company)) }
+        if !city.isEmpty { query.append(URLQueryItem(name: "city", value: city)) }
         return try await authorized(JobsBoard.self, path: "/api/creative/jobs", query: query)
     }
 

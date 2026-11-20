@@ -291,7 +291,22 @@ struct FacilitiesView: View {
                         Text(message).font(.body).foregroundStyle(Color.stoneMuted)
                     }
                     ForEach(filtered(board)) { item in
-                        FacilityBookCard(session: session, item: item, client: client)
+                        CreativeLink(route: .facility(item.id)) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(item.name).font(.headline).foregroundStyle(Color.stoneInk)
+                                if let description = item.description, !description.isEmpty {
+                                    Text(description).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(3)
+                                }
+                                if let capacity = item.capacity {
+                                    Text("Capacity \(capacity)").font(.caption).foregroundStyle(Color.stoneLabel)
+                                }
+                            }
+                            .padding(14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.card)
+                            .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
                     }
                 } else {
                     facilityCard("VFS Studios", "Facilities", "Production stages, screening rooms, recording suites, and creative spaces — reserve a VFS studio for your next project.", key: "studios")
@@ -446,7 +461,7 @@ struct StudioDetailView: View {
     }
 }
 
-private struct FacilityBookCard: View {
+struct FacilityBookCard: View {
     @Bindable var session: AppSession
     var item: FacilityItem
     var client: APIClient
