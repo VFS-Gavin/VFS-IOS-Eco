@@ -220,8 +220,8 @@ nonisolated struct APIClient {
         return try await catalog(WorkshopCategoryPage.self, path: "/api/creative/workshops/\(safe)", missing: "This workshop list isn't available from the app yet.")
     }
 
-    func discoveryList(path: String) async throws -> [DiscoveryListItem] {
-        try await catalog(DiscoveryListResponse.self, path: path, missing: "This Creative Engine list isn't available from the app yet.").items
+    func discoveryList(path: String) async throws -> DiscoveryListResponse {
+        try await catalog(DiscoveryListResponse.self, path: path, missing: "This Creative Engine list isn't available from the app yet.")
     }
 
     func calendar() async throws -> [CalendarItem] {
