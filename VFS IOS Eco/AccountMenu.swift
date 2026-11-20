@@ -5,6 +5,7 @@ struct AccountMenu: View {
     var openWelcome: (() -> Void)?
     var push: ((CreativeRoute) -> Void)?
     @Environment(\.openURL) private var openURL
+    @State private var open = false
 
     init(session: AppSession, openWelcome: (() -> Void)? = nil, push: ((CreativeRoute) -> Void)? = nil) {
         self.session = session
@@ -13,24 +14,8 @@ struct AccountMenu: View {
     }
 
     var body: some View {
-        Menu {
-            if let user = session.account?.user {
-                Text(user.name)
-                Text(user.email)
-            }
-            if session.account?.showsCreative == true && session.account?.creative == "full" {
-                accountItems
-            }
-            Divider()
-            Button("Report a Bug / Suggest a Feature") {
-                if let url = URL(string: "https://forms.gle/9QXW6pAXUk7WtLjL6") {
-                    openURL(url)
-                }
-            }
-            Divider()
-            Button("Sign out", role: .destructive) {
-                session.signOut()
-            }
+        Button {
+            open = true
         } label: {
             HStack(spacing: 4) {
                 Text(initial)
@@ -44,33 +29,99 @@ struct AccountMenu: View {
                     .foregroundStyle(Color.stoneMuted)
             }
         }
+        .buttonStyle(.plain)
         .accessibilityIdentifier("account-menu")
         .accessibilityLabel("Account")
+        .popover(isPresented: $open, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+            panel
+                .presentationCompactAdaptation(.popover)
+                .presentationBackground(Color.card)
+        }
+    }
+
+    private var panel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Rectangle().fill(Color.ecoOrange).frame(height: 3)
+            if let user = session.account?.user {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(user.name)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.stoneInk)
+                        .lineLimit(1)
+                    Text(user.email)
+                        .font(.caption)
+                        .foregroundStyle(Color.stoneMuted)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Divider().overlay(Color.stoneLine)
+            }
+            if session.account?.showsCreative == true && session.account?.creative == "full" {
+                accountItems
+                Divider().overlay(Color.stoneLine).padding(.horizontal, 16)
+            }
+            row("Report a Bug / Suggest a Feature", tint: Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255)) {
+                open = false
+                if let url = URL(string: "https://forms.gle/9QXW6pAXUk7WtLjL6") {
+                    openURL(url)
+                }
+            }
+            Divider().overlay(Color.stoneLine).padding(.horizontal, 16)
+            row("Sign out", tint: Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255)) {
+                open = false
+                session.signOut()
+            }
+        }
+        .frame(width: 280)
+        .background(Color.card)
     }
 
     @ViewBuilder
     private var accountItems: some View {
         if let slug = session.account?.profile?.slug {
-            Button("My Profile") { push?(.profile(slug)) }
-            Button("Manage Portfolio") { push?(.account(.managePortfolio)) }
+            row("My Profile") { choose(.profile(slug)) }
+            row("Manage Portfolio") { choose(.account(.managePortfolio)) }
         } else {
-            Button("Create Profile") { push?(.setupProfile) }
+            row("Create Profile") { choose(.setupProfile) }
         }
-        Button("My Liked") { push?(.account(.liked)) }
-        Button("Profile Settings") {
+        row("My Liked") { choose(.account(.liked)) }
+        row("Profile Settings") {
             if session.account?.profile == nil {
-                push?(.setupProfile)
+                choose(.setupProfile)
             } else {
-                push?(.account(.profileSettings))
+                choose(.account(.profileSettings))
             }
         }
-        Button("My Showcase") { push?(.account(.showcase)) }
+        row("My Showcase") { choose(.account(.showcase)) }
         if session.account?.showsWelcomeHub == true, let openWelcome {
-            Button("Welcome Hub", action: openWelcome)
+            row("Welcome Hub") {
+                open = false
+                openWelcome()
+            }
         }
         if session.account?.user.role == "alumni" {
-            Button("Document Requests") { push?(.account(.documentRequests)) }
+            row("Document Requests") { choose(.account(.documentRequests)) }
         }
+    }
+
+    private func row(_ title: String, tint: Color = .stoneInk, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(tint)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func choose(_ route: CreativeRoute) {
+        open = false
+        push?(route)
     }
 
     private var initial: String {

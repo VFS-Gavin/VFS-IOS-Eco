@@ -173,6 +173,7 @@ enum AccountArea: String, Hashable {
     case profileSettings
     case showcase
     case documentRequests
+    case terms
 
     var title: String {
         switch self {
@@ -181,6 +182,7 @@ enum AccountArea: String, Hashable {
         case .profileSettings: "Profile Settings"
         case .showcase: "My Showcase"
         case .documentRequests: "Document Requests"
+        case .terms: "Terms & Privacy"
         }
     }
 }
