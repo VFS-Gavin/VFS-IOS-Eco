@@ -151,14 +151,14 @@ nonisolated struct APIClient {
         try await submitJSON(path: "/api/creative/profile", method: "PUT", body: body)
     }
 
-    func createProject(_ body: [String: Any], cover: Data? = nil, coverName: String = "cover.jpg") async throws -> String {
-        guard let cover else {
+    func createProject(_ body: [String: Any], cover: Data? = nil, coverName: String = "cover.jpg", media: [Data] = []) async throws -> String {
+        guard cover != nil || !media.isEmpty else {
             return try await submitJSON(path: "/api/creative/projects", body: body)
         }
         let boundary = "vfs-\(UUID().uuidString)"
         return try await submit(
             path: "/api/creative/projects",
-            body: projectForm(body, cover: cover, coverName: coverName, boundary: boundary),
+            body: projectForm(body, cover: cover, coverName: coverName, media: media, boundary: boundary),
             contentType: "multipart/form-data; boundary=\(boundary)"
         )
     }
@@ -435,7 +435,7 @@ nonisolated struct APIClient {
         return RawResponse(status: status, data: data)
     }
 
-    private func projectForm(_ body: [String: Any], cover: Data, coverName: String, boundary: String) -> Data {
+    private func projectForm(_ body: [String: Any], cover: Data?, coverName: String, media: [Data], boundary: String) -> Data {
         var data = Data()
         func part(_ name: String, _ value: String) {
             data.append(Data("--\(boundary)\r\n".utf8))
@@ -456,11 +456,20 @@ nonisolated struct APIClient {
                 }
             }
         }
-        data.append(Data("--\(boundary)\r\n".utf8))
-        data.append(Data("Content-Disposition: form-data; name=\"cover_image\"; filename=\"\(coverName)\"\r\n".utf8))
-        data.append(Data("Content-Type: image/jpeg\r\n\r\n".utf8))
-        data.append(cover)
-        data.append(Data("\r\n".utf8))
+        if let cover {
+            data.append(Data("--\(boundary)\r\n".utf8))
+            data.append(Data("Content-Disposition: form-data; name=\"cover_image\"; filename=\"\(coverName)\"\r\n".utf8))
+            data.append(Data("Content-Type: image/jpeg\r\n\r\n".utf8))
+            data.append(cover)
+            data.append(Data("\r\n".utf8))
+        }
+        for (index, file) in media.enumerated() {
+            data.append(Data("--\(boundary)\r\n".utf8))
+            data.append(Data("Content-Disposition: form-data; name=\"media_files[]\"; filename=\"media-\(index).jpg\"\r\n".utf8))
+            data.append(Data("Content-Type: image/jpeg\r\n\r\n".utf8))
+            data.append(file)
+            data.append(Data("\r\n".utf8))
+        }
         data.append(Data("--\(boundary)--\r\n".utf8))
         return data
     }

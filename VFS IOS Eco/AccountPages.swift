@@ -704,6 +704,14 @@ struct CreateProjectView: View {
     @State private var linkURL = ""
     @State private var coverItem: PhotosPickerItem?
     @State private var coverData: Data?
+    @State private var mediaItems: [PhotosPickerItem] = []
+    @State private var mediaData: [Data] = []
+    @State private var embeds: [String] = []
+    @State private var embedDraft = ""
+    @State private var gameLinks: [String] = []
+    @State private var gameDraft = ""
+    @State private var models: [String] = []
+    @State private var modelDraft = ""
     @State private var message: String?
     @State private var saving = false
 
@@ -725,6 +733,10 @@ struct CreateProjectView: View {
                     Text("Other").tag("other")
                 }
                 coverPicker
+                galleryPicker
+                urlList("YouTube / Vimeo", placeholder: "YouTube or Vimeo URL...", items: embeds, draft: $embedDraft, add: addEmbed)
+                urlList("Game Link", placeholder: "https://yourgame.itch.io/... or Steam / Epic Games Store link", items: gameLinks, draft: $gameDraft, add: addGame)
+                urlList("3D Viewer", placeholder: "Sketchfab model page or skfb.ly link", items: models, draft: $modelDraft, add: addModel)
                 chips("Tags", help: "Freeform topic, skill, or genre tags to help people find this project. Not for term or program affiliation.", presets: tagPresets, selected: tags, draft: $tagDraft) { toggleTag($0) }
                 chips("Tools Used", help: "Programming languages", presets: toolPresets, selected: tools, draft: $toolDraft) { toggleTool($0) }
                 collaborators
@@ -773,17 +785,80 @@ struct CreateProjectView: View {
                     .foregroundStyle(Color.ecoOrange)
             }
             .onChange(of: coverItem) { _, item in
-                Task {
-                    if let data = try? await item?.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data),
-                       let jpeg = image.jpegData(compressionQuality: 0.9) {
-                        coverData = jpeg
-                    } else {
-                        coverData = nil
+                Task { coverData = await Self.jpeg(item) }
+            }
+        }
+    }
+
+    private var galleryPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Media")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.stoneMuted)
+            if !mediaData.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(mediaData.enumerated()), id: \.offset) { _, data in
+                            if let image = UIImage(data: data) {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 72, height: 72)
+                                    .clipped()
+                            }
+                        }
                     }
                 }
             }
+            PhotosPicker(selection: $mediaItems, maxSelectionCount: 12, matching: .images) {
+                Text(mediaData.isEmpty ? "Add Images" : "Replace Images")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.ecoOrange)
+            }
+            .onChange(of: mediaItems) { _, items in
+                Task {
+                    var files: [Data] = []
+                    for item in items {
+                        if let jpeg = await Self.jpeg(item) { files.append(jpeg) }
+                    }
+                    mediaData = files
+                }
+            }
         }
+    }
+
+    private func urlList(_ title: String, placeholder: String, items: [String], draft: Binding<String>, add: @escaping () -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            HStack {
+                TextField(placeholder, text: draft)
+                    .textFieldStyle(.roundedBorder)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                Button("Add", action: add)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.ecoOrange)
+            }
+            ForEach(items, id: \.self) { item in
+                Text(item).font(.caption).foregroundStyle(Color.stoneMuted).lineLimit(1)
+            }
+        }
+    }
+
+    private func addEmbed() { push(&embeds, embedDraft) { embedDraft = "" } }
+    private func addGame() { push(&gameLinks, gameDraft) { gameDraft = "" } }
+    private func addModel() { push(&models, modelDraft) { modelDraft = "" } }
+
+    private func push(_ list: inout [String], _ raw: String, clear: () -> Void) {
+        guard let url = https(raw), list.count < 10, !list.contains(url) else { return }
+        list.append(url)
+        clear()
+    }
+
+    private static func jpeg(_ item: PhotosPickerItem?) async -> Data? {
+        guard let data = try? await item?.loadTransferable(type: Data.self),
+              let image = UIImage(data: data) else { return nil }
+        return image.jpegData(compressionQuality: 0.85)
     }
 
     private func chips(_ title: String, help: String, presets: [String], selected: [String], draft: Binding<String>, toggleItem: @escaping (String) -> Void) -> some View {
@@ -909,7 +984,10 @@ struct CreateProjectView: View {
         }
         if !urls.isEmpty { body["external_links"] = urls }
         do {
-            _ = try await client.createProject(body, cover: coverData, coverName: "cover.jpg")
+            if !embeds.isEmpty { body["new_video_embeds"] = embeds }
+            if !gameLinks.isEmpty { body["new_game_links"] = gameLinks }
+            if !models.isEmpty { body["new_3d_embeds"] = models }
+            _ = try await client.createProject(body, cover: coverData, coverName: "cover.jpg", media: mediaData)
             await onSaved()
             dismiss()
         } catch APIError.unauthorized {
