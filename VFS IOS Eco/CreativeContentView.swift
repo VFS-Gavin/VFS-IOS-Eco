@@ -51,7 +51,14 @@ struct ProjectDetailView: View {
                                 .foregroundStyle(Color.stoneInk)
                         }
                         ForEach(project.media) { item in
-                            if let address = item.url, let url = PortfolioProject.coverURL(address) ?? URL(string: address) {
+                            if item.type == "image", let url = AccountMedia.url(item.url) {
+                                AsyncImage(url: url) { image in
+                                    image.resizable().scaledToFit()
+                                } placeholder: {
+                                    Color.stoneLine.frame(height: 160)
+                                }
+                                .frame(maxWidth: .infinity)
+                            } else if let address = item.url, let url = AccountMedia.url(address) ?? URL(string: address) {
                                 Button(item.type?.isEmpty == false ? (item.type ?? "Open") : "Open") {
                                     openURL(url)
                                 }
@@ -580,7 +587,7 @@ private extension APIError {
 
 @ViewBuilder
 private func cover(_ raw: String?) -> some View {
-    if let url = PortfolioProject.coverURL(raw) {
+    if let url = AccountMedia.url(raw) ?? PortfolioProject.coverURL(raw) {
         AsyncImage(url: url) { image in
             image.resizable().scaledToFill()
         } placeholder: {
