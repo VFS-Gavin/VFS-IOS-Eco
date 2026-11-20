@@ -72,12 +72,53 @@ enum CreativeHubCatalog {
     }
 }
 
+private struct CreativeRouteKey: EnvironmentKey {
+    static let defaultValue: (CreativeRoute) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    var openCreativeRoute: (CreativeRoute) -> Void {
+        get { self[CreativeRouteKey.self] }
+        set { self[CreativeRouteKey.self] = newValue }
+    }
+}
+
+struct CreativeLink<Label: View>: View {
+    var route: CreativeRoute
+    @ViewBuilder var label: () -> Label
+    @Environment(\.openCreativeRoute) private var open
+
+    var body: some View {
+        Button(action: { open(route) }, label: label)
+            .buttonStyle(.plain)
+    }
+}
+
 struct CreativeHubScreen: View {
+    var session: AppSession
+    var industry: Bool
+    var openWelcome: (() -> Void)?
+    @State private var path = NavigationPath()
+
+    var body: some View {
+        NavigationStack(path: $path) {
+            CreativeHubHome(session: session, industry: industry, openWelcome: openWelcome, path: $path)
+                .navigationDestination(for: CreativeRoute.self) { route in
+                    CreativeDestination(session: session, route: route)
+                }
+                .environment(\.openCreativeRoute) { route in
+                    path.append(route)
+                }
+        }
+    }
+}
+
+struct CreativeHubHome: View {
     @Bindable var session: AppSession
     var industry: Bool
     var openWelcome: (() -> Void)?
+    @Binding var path: NavigationPath
     @Environment(\.colorScheme) private var colorScheme
-    @State private var path = NavigationPath()
 
     private var cards: [CreativeHubCard] {
         let source = industry ? CreativeHubCatalog.industry : CreativeHubCatalog.student
@@ -88,8 +129,7 @@ struct CreativeHubScreen: View {
     }
 
     var body: some View {
-        NavigationStack(path: $path) {
-            ScrollView {
+        ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     if industry {
                         Text("See who's ready to work")
@@ -115,7 +155,7 @@ struct CreativeHubScreen: View {
                     }
 
                     if session.account?.canCreateProfile == true {
-                        NavigationLink(value: CreativeRoute.setupProfile) {
+                        CreativeLink(route: .setupProfile) {
                             Text("Create your profile")
                                 .font(.body.weight(.bold))
                                 .foregroundStyle(Color.ecoOrange)
@@ -132,7 +172,7 @@ struct CreativeHubScreen: View {
                     ForEach(cards) { card in
                         let open = CreativeHubCatalog.isOpen(card.kind, account: session.account)
                         if open {
-                            NavigationLink(value: card.route) {
+                            CreativeLink(route: card.route) {
                                 cardFace(card, open: true)
                             }
                             .buttonStyle(.plain)
@@ -151,9 +191,6 @@ struct CreativeHubScreen: View {
             .background(Color.stone)
             .navigationTitle("Creative ECOsystem")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(for: CreativeRoute.self) { route in
-                CreativeDestination(session: session, route: route)
-            }
             .toolbar {
                 ThemeToggle()
                 AccountMenu(session: session, openWelcome: openWelcome) { route in
@@ -162,7 +199,6 @@ struct CreativeHubScreen: View {
             }
             .onAppear(perform: openQueuedRoute)
             .accessibilityIdentifier("creative-hub")
-        }
     }
 
     private func openQueuedRoute() {

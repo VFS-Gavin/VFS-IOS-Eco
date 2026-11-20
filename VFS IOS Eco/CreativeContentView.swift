@@ -29,7 +29,7 @@ struct ProjectDetailView: View {
                         }
                         if let owner = project.ownerName, !owner.isEmpty {
                             if let slug = project.profileSlug, !slug.isEmpty {
-                                NavigationLink(value: CreativeRoute.profile(slug)) {
+                                CreativeLink(route: CreativeRoute.profile(slug)) {
                                     Text(owner).font(.headline)
                                 }
                                 .tint(Color.ecoOrange)
@@ -131,7 +131,7 @@ struct ProfileDetailView: View {
                                 .foregroundStyle(Color.stoneInk)
                         }
                         ForEach(profile.projects) { project in
-                            NavigationLink(value: CreativeRoute.project(project.id)) {
+                            CreativeLink(route: CreativeRoute.project(project.id)) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(project.title).font(.headline).foregroundStyle(Color.stoneInk)
                                     Text("\(project.likesCount) likes")
@@ -222,7 +222,7 @@ struct CollabsView: View {
                             .foregroundStyle(Color.stoneMuted)
                     } else {
                         ForEach(collabs) { collab in
-                            NavigationLink(value: CreativeRoute.collab(collab.id)) {
+                            CreativeLink(route: CreativeRoute.collab(collab.id)) {
                                 collabCard(collab)
                             }
                             .buttonStyle(.plain)

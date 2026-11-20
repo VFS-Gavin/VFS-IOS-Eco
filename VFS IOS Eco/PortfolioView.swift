@@ -123,7 +123,7 @@ struct PortfolioView: View {
                 )
 
                 if session.account?.canCreateProfile == true {
-                    NavigationLink(value: CreativeRoute.setupProfile) {
+                    CreativeLink(route: CreativeRoute.setupProfile) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("YOUR PORTFOLIO")
                                 .font(.system(size: 11, weight: .medium))
@@ -189,7 +189,7 @@ struct PortfolioView: View {
                     } else {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                             ForEach(projects) { project in
-                                NavigationLink(value: CreativeRoute.project(project.id)) {
+                                CreativeLink(route: CreativeRoute.project(project.id)) {
                                     card(project)
                                 }
                                 .buttonStyle(.plain)
