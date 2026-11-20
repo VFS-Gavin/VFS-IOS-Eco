@@ -279,6 +279,15 @@ struct CollabsView: View {
                     accentColor: .collabPurple,
                     detail: "Find collaborators for your next project: short films, games, music videos, and beyond."
                 )
+                CreativeLink(route: .createCollab) {
+                    Text("Post a collaboration")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.collabPurple)
+                }
+                .buttonStyle(.plain)
                 CreativeSearchField(placeholder: "Search by project name, description, or role…", text: $search, identifier: "collab-search") {
                     Task { await reload() }
                 }
@@ -501,6 +510,13 @@ struct CollabDetailView: View {
     var client: APIClient = APIClient()
     @State private var collab: CollabCard?
     @State private var phase: LoadPhase = .loading
+    @State private var inquiryName = ""
+    @State private var inquiryEmail = ""
+    @State private var inquiryRole = ""
+    @State private var inquiryReel = ""
+    @State private var inquiryMessage = ""
+    @State private var inquiryNotice: String?
+    @State private var sendingInquiry = false
 
     var body: some View {
         ScrollView {
@@ -549,6 +565,22 @@ struct CollabDetailView: View {
                         if let description = collab.description, !description.isEmpty {
                             Text(description).font(.body).foregroundStyle(Color.stoneMuted)
                         }
+                        Text("Inquire")
+                            .font(.headline)
+                            .foregroundStyle(Color.stoneInk)
+                            .padding(.top, 8)
+                        TextField("Name", text: $inquiryName).textFieldStyle(.roundedBorder)
+                        TextField("Email", text: $inquiryEmail).textFieldStyle(.roundedBorder)
+                        TextField("Role", text: $inquiryRole).textFieldStyle(.roundedBorder)
+                        TextField("https:// reel", text: $inquiryReel).textFieldStyle(.roundedBorder)
+                        TextField("Message", text: $inquiryMessage, axis: .vertical).textFieldStyle(.roundedBorder)
+                        Button(sendingInquiry ? "Sending…" : "Send inquiry") { Task { await inquire() } }
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.collabPurple)
+                            .disabled(sendingInquiry)
+                        if let inquiryNotice {
+                            Text(inquiryNotice).font(.caption).foregroundStyle(Color.stoneMuted)
+                        }
                     }
                 }
             }
@@ -557,7 +589,11 @@ struct CollabDetailView: View {
         .background(Color.stone)
         .navigationTitle("Collab")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await load() }
+        .task {
+            if inquiryName.isEmpty { inquiryName = session.account?.user.name ?? "" }
+            if inquiryEmail.isEmpty { inquiryEmail = session.account?.user.email ?? "" }
+            await load()
+        }
     }
 
     private func load() async {
@@ -570,6 +606,32 @@ struct CollabDetailView: View {
             phase = .failed(error.message)
         } catch {
             phase = .failed("This collab could not be loaded.")
+        }
+    }
+
+    private func inquire() async {
+        sendingInquiry = true
+        inquiryNotice = nil
+        defer { sendingInquiry = false }
+        var body: [String: Any] = [
+            "name": inquiryName.trimmingCharacters(in: .whitespacesAndNewlines),
+            "email": inquiryEmail.trimmingCharacters(in: .whitespacesAndNewlines),
+            "message": inquiryMessage.trimmingCharacters(in: .whitespacesAndNewlines),
+        ]
+        let role = inquiryRole.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !role.isEmpty { body["role_applied_for"] = role }
+        let reel = inquiryReel.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !reel.isEmpty { body["reel_url"] = reel }
+        do {
+            try await client.sendCollabInquiry(id: id, body: body)
+            inquiryMessage = ""
+            inquiryNotice = "Sent."
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            inquiryNotice = text
+        } catch {
+            inquiryNotice = "The inquiry could not be sent."
         }
     }
 }

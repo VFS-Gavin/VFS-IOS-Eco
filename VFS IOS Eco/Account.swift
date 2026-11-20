@@ -173,6 +173,11 @@ enum CreativeRoute: Hashable {
     case createProject
     case editProject(Int)
     case studio(String)
+    case discoveryTitle(String, String)
+    case tasteEditor
+    case createCollab
+    case grantApply(Int)
+    case editPitches
 }
 
 enum AccountArea: String, Hashable {

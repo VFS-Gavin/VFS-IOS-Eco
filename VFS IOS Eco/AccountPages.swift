@@ -545,6 +545,18 @@ struct OwnProfileView: View {
                 }
             }
         }
+        CreativeLink(route: .tasteEditor) {
+            Text("Edit your watch list and Top 5")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.ecoOrange)
+        }
+        .buttonStyle(.plain)
+        CreativeLink(route: .editPitches) {
+            Text("Edit pitches")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.ecoOrange)
+        }
+        .buttonStyle(.plain)
         block("Pitches") {
             if settings.pitches.isEmpty {
                 Text("No pitches yet.")

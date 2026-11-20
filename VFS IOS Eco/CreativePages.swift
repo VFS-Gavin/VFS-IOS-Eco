@@ -137,8 +137,11 @@ struct DiscoveryView: View {
                     discoveryCard("Write an elevator pitch", "One sentence for the concept, then a fuller write-up if you want. Posted on the pitches page, not by searching a title.", cue: "Open pitches")
                 }
                 .buttonStyle(.plain)
-                CreativeLink(route: CreativeRoute.discoveryList(.top5)) {
+                CreativeLink(route: CreativeRoute.tasteEditor) {
                     discoveryCard("Build your Top 5", "The films, games, books, and people that shaped you, with a note on why each one matters.", cue: "Your Top 5")
+                }
+                CreativeLink(route: CreativeRoute.discoveryList(.top5)) {
+                    discoveryCard("Top 5 Rankings", "What the community has highlighted most.", cue: "Open rankings")
                 }
                 .buttonStyle(.plain)
                 discoveryCard("Rate what you've seen", "Search the title above, open it, then rate, review, or add it to your catalogue.", cue: "Focus search")
@@ -170,6 +173,11 @@ struct DiscoveryView: View {
     private func discoveryRow(_ hit: DiscoveryHit) -> some View {
         if hit.resultType == "profile", let slug = hit.slug, !slug.isEmpty {
             CreativeLink(route: CreativeRoute.profile(slug)) {
+                discoveryRowBody(hit)
+            }
+            .buttonStyle(.plain)
+        } else if let type = hit.type, ["film", "tv", "game", "book", "youtube"].contains(type) {
+            CreativeLink(route: .discoveryTitle(type, hit.id)) {
                 discoveryRowBody(hit)
             }
             .buttonStyle(.plain)

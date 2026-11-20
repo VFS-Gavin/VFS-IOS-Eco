@@ -235,6 +235,82 @@ nonisolated struct APIClient {
         try await postJSON(ChatSend.self, path: "/api/welcome/conversations/\(id)/messages", body: ["body": body]).message
     }
 
+    func tasteBoard() async throws -> OwnTaste {
+        try await authorized(OwnTaste.self, path: "/api/creative/taste")
+    }
+
+    func searchTaste(type: String, query: String) async throws -> [TasteHit] {
+        let safe = type.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? type
+        return try await authorized(TasteSearchPage.self, path: "/api/creative/taste/search/\(safe)", query: [URLQueryItem(name: "q", value: query)]).items
+    }
+
+    func addTasteItem(_ item: TasteHit) async throws {
+        _ = try await postJSON(OkFlag.self, path: "/api/creative/taste/items", body: item.favoriteBody(highlighted: false, note: nil))
+    }
+
+    func saveHighlights(_ items: [TasteItem]) async throws {
+        let ids = items.filter(\.highlighted).map(\.id)
+        var notes: [String: String] = [:]
+        for item in items where item.highlighted {
+            let note = item.note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !note.isEmpty { notes[String(item.id)] = note }
+        }
+        _ = try await postJSON(OkFlag.self, path: "/api/creative/taste/highlights", method: "PUT", body: [
+            "highlighted_ids": ids,
+            "notes": notes,
+        ])
+    }
+
+    func markSeen(_ item: TasteHit, seen: Bool) async throws {
+        var body = item.favoriteBody(highlighted: false, note: nil)
+        body["seen"] = seen
+        _ = try await postJSON(OkFlag.self, path: "/api/creative/taste/seen", body: body)
+    }
+
+    func discoveryTitle(type: String, externalID: String) async throws -> DiscoveryTitlePage {
+        let safeType = type.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? type
+        let safeID = externalID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? externalID
+        return try await authorized(DiscoveryTitlePage.self, path: "/api/creative/discovery/\(safeType)/\(safeID)")
+    }
+
+    func saveReview(type: String, externalID: String, title: String, poster: String?, year: String?, rating: Double, review: String) async throws -> String {
+        var body: [String: Any] = [
+            "media_type": type,
+            "external_id": externalID,
+            "title": title,
+            "rating": rating,
+        ]
+        if let poster, !poster.isEmpty { body["poster_url"] = poster }
+        if let year, let number = Int(year) { body["release_year"] = number }
+        let text = review.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty { body["review"] = text }
+        return try await submitJSON(path: "/api/creative/discovery/reviews", body: body)
+    }
+
+    func deleteReview(id: Int) async throws -> String {
+        try await submitJSON(path: "/api/creative/discovery/reviews/\(id)", method: "DELETE", body: [:])
+    }
+
+    func saveChallengeResponse(id: Int, body: String) async throws {
+        _ = try await postJSON(OkFlag.self, path: "/api/creative/discovery/challenges/\(id)/response", body: ["body": body])
+    }
+
+    func createCollab(_ body: [String: Any]) async throws -> String {
+        try await submitJSON(path: "/api/creative/collabs", body: body)
+    }
+
+    func sendCollabInquiry(id: Int, body: [String: Any]) async throws {
+        _ = try await postJSON(OkFlag.self, path: "/api/creative/collabs/\(id)/inquiries", body: body)
+    }
+
+    func applyForGrant(_ body: [String: Any]) async throws -> String {
+        try await submitJSON(path: "/api/creative/funding/apply", body: body)
+    }
+
+    func savePitches(_ pitches: [[String: Any]]) async throws {
+        _ = try await postJSON(OkFlag.self, path: "/api/creative/profile/pitches", body: ["pitches": pitches])
+    }
+
     private func sendProject(path: String, method: String, body: [String: Any], cover: Data?, coverName: String, media: [Data]) async throws -> String {
         guard cover != nil || !media.isEmpty else {
             return try await submitJSON(path: path, method: method, body: body)
