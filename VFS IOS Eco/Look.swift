@@ -57,6 +57,8 @@ enum HubEmoji {
         case "/welcome/o-day": "📅"
         case "/welcome/housing": "🏠"
         case "/welcome/social-media": "📱"
+        case "/welcome/connect": "🤝"
+        case "/welcome/documents": "📘"
         default: "📄"
         }
     }

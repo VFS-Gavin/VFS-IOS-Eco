@@ -199,13 +199,40 @@ nonisolated struct APIClient {
         return !visible
     }
 
-    func submitMultipart(path: String, fields: [String: String], files: [FormAttachment]) async throws -> String {
+    func submitMultipart(path: String, fields: [String: String], files: [FormAttachment], fileField: String = "supporting_documents[]") async throws -> String {
         let boundary = "vfs-\(UUID().uuidString)"
         return try await submit(
             path: path,
-            body: multipart(fields: fields, files: files, boundary: boundary),
+            body: multipart(fields: fields, files: files, fileField: fileField, boundary: boundary),
             contentType: "multipart/form-data; boundary=\(boundary)"
         )
+    }
+
+    func housingProperties() async throws -> [HousingListing] {
+        try await catalog(HousingPropertiesPage.self, path: "/api/welcome/housing/properties", missing: "Housing listings aren't available from the app yet.").listings
+    }
+
+    func housingProperty(id: Int) async throws -> HousingListing {
+        try await catalog(HousingPropertyPage.self, path: "/api/welcome/housing/properties/\(id)", missing: "This listing isn't available from the app yet.").listing
+    }
+
+    func housingStudents() async throws -> [HousingSeeker] {
+        try await catalog(HousingStudentsPage.self, path: "/api/welcome/housing/students", missing: "Roommate profiles aren't available from the app yet.").students
+    }
+
+    func submitHousingSeeking(_ body: [String: Any]) async throws -> String {
+        try await submitJSON(path: "/api/welcome/housing/student-seeking", body: body)
+    }
+
+    func submitLandlordListing(_ fields: [String: String], photos: [Data]) async throws -> String {
+        let files = photos.enumerated().map {
+            FormAttachment(filename: "photo-\($0.offset).jpg", mimeType: "image/jpeg", data: $0.element)
+        }
+        return try await submitMultipart(path: "/api/welcome/housing/landlord-application", fields: fields, files: files, fileField: "photos[]")
+    }
+
+    func registerForHousing(propertyID: Int, body: [String: Any]) async throws -> String {
+        try await submitJSON(path: "/api/welcome/housing/properties/\(propertyID)/register", body: body)
     }
 
     func instructors() async throws -> InstructorDirectory {
@@ -489,7 +516,7 @@ nonisolated struct APIClient {
         return data
     }
 
-    private func multipart(fields: [String: String], files: [FormAttachment], boundary: String) -> Data {
+    private func multipart(fields: [String: String], files: [FormAttachment], fileField: String = "supporting_documents[]", boundary: String) -> Data {
         var data = Data()
         for (key, value) in fields {
             data.append(Data("--\(boundary)\r\n".utf8))
@@ -499,7 +526,7 @@ nonisolated struct APIClient {
         }
         for file in files {
             data.append(Data("--\(boundary)\r\n".utf8))
-            data.append(Data("Content-Disposition: form-data; name=\"supporting_documents[]\"; filename=\"\(file.filename)\"\r\n".utf8))
+            data.append(Data("Content-Disposition: form-data; name=\"\(fileField)\"; filename=\"\(file.filename)\"\r\n".utf8))
             data.append(Data("Content-Type: \(file.mimeType)\r\n\r\n".utf8))
             data.append(file.data)
             data.append(Data("\r\n".utf8))

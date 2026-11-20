@@ -322,7 +322,7 @@ struct WelcomeHubView: View {
                         .accessibilityIdentifier("welcome-announcements")
                     }
 
-                    let groups = session.welcome?.groups ?? []
+                    let groups = session.welcome?.includingLocalTiles().groups ?? []
                     let visible = groups.map { ($0, matching($0)) }.filter { !$0.1.isEmpty }
                     if !query.isEmpty && visible.isEmpty && !showsAnnouncements {
                         Text("No results found for \"\(query)\"")
@@ -416,6 +416,14 @@ struct WelcomeHubView: View {
                     FinancialPlanningView()
                 case .announcements:
                     StudentAnnouncementsView(session: session)
+                case .socialMedia:
+                    SocialMediaView()
+                case .connect:
+                    ConnectView()
+                case .documents:
+                    DocumentsView()
+                case .housing:
+                    HousingHubView(session: session)
                 case .programPrep(let slug):
                     ProgramPrepView(slug: slug)
                 case .summary(let title, let description):
