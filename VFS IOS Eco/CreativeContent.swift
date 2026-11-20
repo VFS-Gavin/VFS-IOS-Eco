@@ -425,3 +425,195 @@ nonisolated struct TasteBoard: Decodable {
         case mostFavorited = "most_favorited"
     }
 }
+
+nonisolated struct ManageBoard: Decodable {
+    var projects: [ManagedProject]
+    var collaborated: [ManagedProject]
+    var liked: [ManagedProject]
+    var ideas: [LikedIdea]
+
+    enum CodingKeys: String, CodingKey {
+        case projects
+        case collaborated = "collaborated_projects"
+        case liked = "liked_projects"
+        case ideas = "liked_ideas"
+    }
+}
+
+nonisolated struct ManagedProject: Decodable, Identifiable, Equatable {
+    var id: Int
+    var title: String
+    var category: String?
+    var status: String
+    var views: Int
+    var likesCount: Int
+    var commentsCount: Int
+    var coverURL: String?
+    var collabRole: String?
+    var collabHidden: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, category, status, views
+        case likesCount = "likes_count"
+        case commentsCount = "comments_count"
+        case coverURL = "cover_url"
+        case collabRole = "collab_role"
+        case collabHidden = "collab_hidden"
+    }
+
+    var isDraft: Bool { status == "draft" }
+
+    var categoryLabel: String {
+        CreativeLabels.category(category)
+    }
+}
+
+nonisolated struct LikedIdea: Decodable, Identifiable, Equatable {
+    var pitchID: Int
+    var text: String
+    var profileSlug: String?
+    var creatorName: String
+
+    var id: Int { pitchID }
+
+    enum CodingKeys: String, CodingKey {
+        case pitchID = "pitch_id"
+        case text
+        case profileSlug = "profile_slug"
+        case creatorName = "creator_name"
+    }
+}
+
+nonisolated struct OwnSettings: Decodable {
+    var headline: String?
+    var pronouns: String?
+    var bio: String?
+    var role: String?
+    var location: String?
+    var website: String?
+    var displayName: String?
+    var showreel: String?
+    var socialLinks: [String: String]
+    var program: [String]
+    var term: String?
+    var graduationYear: String?
+    var skills: [String]
+    var software: [String]
+    var openToWork: Bool
+    var openToCollab: Bool
+    var visibility: String
+    var mediaTastePublic: Bool
+    var pitches: [OwnPitch]
+    var showcaseTitles: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case headline, pronouns, bio, role, location, website, term, visibility, pitches
+        case displayName = "display_name"
+        case showreel
+        case socialLinks = "social_links"
+        case program
+        case graduationYear = "graduation_year"
+        case skills, software
+        case openToWork = "open_to_work"
+        case openToCollab = "open_to_collab"
+        case mediaTastePublic = "media_taste_public"
+        case showcaseTitles = "showcase_titles"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        headline = try container.decodeIfPresent(String.self, forKey: .headline)
+        pronouns = try container.decodeIfPresent(String.self, forKey: .pronouns)
+        bio = try container.decodeIfPresent(String.self, forKey: .bio)
+        role = try container.decodeIfPresent(String.self, forKey: .role)
+        location = try container.decodeIfPresent(String.self, forKey: .location)
+        website = try container.decodeIfPresent(String.self, forKey: .website)
+        displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
+        showreel = try container.decodeIfPresent(String.self, forKey: .showreel)
+        socialLinks = (try? container.decode([String: String].self, forKey: .socialLinks)) ?? [:]
+        program = Self.strings(container, .program)
+        term = try container.decodeIfPresent(String.self, forKey: .term)
+        if let text = try? container.decode(String.self, forKey: .graduationYear), !text.isEmpty {
+            graduationYear = text
+        } else if let number = try? container.decode(Int.self, forKey: .graduationYear) {
+            graduationYear = String(number)
+        } else {
+            graduationYear = nil
+        }
+        skills = Self.strings(container, .skills)
+        software = Self.strings(container, .software)
+        openToWork = (try? container.decode(Bool.self, forKey: .openToWork)) ?? false
+        openToCollab = (try? container.decode(Bool.self, forKey: .openToCollab)) ?? false
+        visibility = try container.decodeIfPresent(String.self, forKey: .visibility) ?? "public"
+        mediaTastePublic = (try? container.decode(Bool.self, forKey: .mediaTastePublic)) ?? true
+        pitches = (try? container.decode([OwnPitch].self, forKey: .pitches)) ?? []
+        showcaseTitles = Self.strings(container, .showcaseTitles)
+    }
+
+    private static func strings(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> [String] {
+        if let list = try? container.decode([String].self, forKey: key) { return list }
+        if let one = try? container.decode(String.self, forKey: key), !one.isEmpty { return [one] }
+        return []
+    }
+}
+
+nonisolated struct OwnPitch: Decodable, Identifiable, Equatable {
+    var id: Int
+    var pitch: String
+    var category: String?
+    var description: String?
+}
+
+nonisolated enum CreativeLabels {
+    static func category(_ key: String?) -> String {
+        guard let key, !key.isEmpty else { return "" }
+        return names[key] ?? titled(key)
+    }
+
+    static func program(_ key: String) -> String {
+        return names[key] ?? titled(key)
+    }
+
+    private static func titled(_ key: String) -> String {
+        key.replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+            .split(separator: " ")
+            .map { word in
+                guard let first = word.first else { return "" }
+                return String(first).uppercased() + word.dropFirst()
+            }
+            .joined(separator: " ")
+    }
+
+    private static let names = [
+        "3d_animation": "3D Animation & Visual Effects",
+        "acting_film": "Acting for Film & Television",
+        "animation_concept": "Animation Concept Art",
+        "classical_animation": "Classical Animation",
+        "digital_design": "Digital Design",
+        "film_production": "Film Production",
+        "game_design": "Game Design",
+        "makeup_design": "Makeup Design for Film & Television",
+        "programming_games": "Programming for Games, Web & Mobile",
+        "sound_design": "Sound Design for Visual Media",
+        "writing": "Writing for Film, Television & Games",
+        "acting_essentials": "Acting Essentials",
+        "acting_essentials_evening": "Acting Essentials - Evening & Weekend",
+        "english_creative_arts": "English for Creative Arts",
+        "foundation_film": "Foundation – Film",
+        "foundation_animation": "Foundation – Animation",
+        "foundation_design": "Foundation - Design",
+        "foundation_art": "Foundation Visual Art & Design",
+        "film": "Film",
+        "acting": "Acting",
+        "animation": "Animation",
+        "vfx": "VFX",
+        "game_art": "Game Art",
+        "concept_art": "Concept Art",
+        "sound": "Sound Design",
+        "makeup": "Makeup & SFX",
+        "writing_legacy": "Writing",
+        "programming": "Programming",
+        "other": "Other",
+    ]
+}

@@ -292,6 +292,14 @@ struct CreativeDestination: View {
                 TranscriptRequestView()
             case .t2202Request:
                 T2202FormView(session: session, submitPath: "/api/creative/requests/t2202", prefill: true)
+            case .managePortfolio:
+                ManagePortfolioView(session: session, start: .projects)
+            case .liked:
+                ManagePortfolioView(session: session, start: .liked)
+            case .profileSettings:
+                OwnProfileView(session: session, showcase: false)
+            case .showcase:
+                OwnProfileView(session: session, showcase: true)
             default:
                 AccountAreaView(area: area)
             }
