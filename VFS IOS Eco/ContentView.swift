@@ -249,6 +249,17 @@ struct SignInView: View {
     #endif
 }
 
+private struct WelcomeRouteKey: EnvironmentKey {
+    static let defaultValue: (WelcomeRoute) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    var openWelcomeRoute: (WelcomeRoute) -> Void {
+        get { self[WelcomeRouteKey.self] }
+        set { self[WelcomeRouteKey.self] = newValue }
+    }
+}
+
 struct WelcomeHubView: View {
     @Bindable var session: AppSession
     var openCreative: () -> Void = {}
@@ -436,6 +447,14 @@ struct WelcomeHubView: View {
                     HousingSeekingView(session: session)
                 case .housingProperty(let id):
                     HousingListingDetailView(session: session, id: id)
+                case .ambassadors:
+                    AmbassadorsView(session: session)
+                case .ambassador(let id):
+                    AmbassadorDetailView(session: session, id: id)
+                case .messages:
+                    MessagesView(session: session)
+                case .conversation(let id):
+                    ConversationView(session: session, id: id)
                 case .form(let link):
                     welcomeForm(link)
                 case .programPrep(let slug):
@@ -457,6 +476,9 @@ struct WelcomeHubView: View {
             }
         }
         .tint(accent)
+        .environment(\.openWelcomeRoute) { route in
+            path.append(route)
+        }
     }
 
     @ViewBuilder

@@ -283,19 +283,7 @@ struct FacilitiesView: View {
                         Text(message).font(.body).foregroundStyle(Color.stoneMuted)
                     }
                     ForEach(filtered(board)) { item in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(item.name).font(.headline).foregroundStyle(Color.stoneInk)
-                            if let description = item.description, !description.isEmpty {
-                                Text(description).font(.subheadline).foregroundStyle(Color.stoneMuted)
-                            }
-                            if let capacity = item.capacity {
-                                Text("Capacity \(capacity)").font(.caption).foregroundStyle(Color.stoneLabel)
-                            }
-                        }
-                        .padding(14)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.card)
-                        .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+                        FacilityBookCard(session: session, item: item, client: client)
                     }
                 } else {
                     facilityCard("VFS Studios", "Facilities", "Production stages, screening rooms, recording suites, and creative spaces — reserve a VFS studio for your next project.", key: "studios")
@@ -447,5 +435,77 @@ struct StudioDetailView: View {
         .background(Color.stone)
         .navigationTitle(project.title)
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct FacilityBookCard: View {
+    @Bindable var session: AppSession
+    var item: FacilityItem
+    var client: APIClient
+    @State private var start = Date().addingTimeInterval(60 * 60)
+    @State private var purpose = ""
+    @State private var name = ""
+    @State private var attendees = 1
+    @State private var guests = false
+    @State private var notice: String?
+    @State private var sending = false
+    @State private var named = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(item.name).font(.headline).foregroundStyle(Color.stoneInk)
+            if let description = item.description, !description.isEmpty {
+                Text(description).font(.subheadline).foregroundStyle(Color.stoneMuted)
+            }
+            if let capacity = item.capacity {
+                Text("Capacity \(capacity)").font(.caption).foregroundStyle(Color.stoneLabel)
+            }
+            DatePicker("Start", selection: $start)
+            TextField("Purpose", text: $purpose, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+            TextField("Your name", text: $name)
+                .textFieldStyle(.roundedBorder)
+            Stepper("Attendees \(attendees)", value: $attendees, in: 1...200)
+            Toggle("Non-VFS attendees", isOn: $guests)
+            Button(sending ? "Sending…" : "Request booking") { Task { await book() } }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.ecoOrange)
+                .disabled(sending || purpose.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            if let notice {
+                Text(notice).font(.caption).foregroundStyle(Color.stoneMuted)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.card)
+        .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+        .onAppear {
+            if !named {
+                name = session.account?.user.name ?? ""
+                named = true
+            }
+        }
+    }
+
+    private func book() async {
+        sending = true
+        notice = nil
+        defer { sending = false }
+        do {
+            notice = try await client.bookFacility(
+                id: item.id,
+                start: start,
+                purpose: purpose.trimmingCharacters(in: .whitespacesAndNewlines),
+                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                attendees: attendees,
+                guests: guests
+            )
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            notice = text
+        } catch {
+            notice = "The booking could not be sent."
+        }
     }
 }

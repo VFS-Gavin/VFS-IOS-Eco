@@ -6,6 +6,9 @@ struct ProjectDetailView: View {
     var client: APIClient = APIClient()
     @Environment(\.openURL) private var openURL
     @State private var project: ProjectDetail?
+    @State private var comments: [ProjectComment] = []
+    @State private var commentDraft = ""
+    @State private var notice: String?
     @State private var phase: LoadPhase = .loading
 
     var body: some View {
@@ -37,9 +40,37 @@ struct ProjectDetailView: View {
                                 Text(owner).font(.headline).foregroundStyle(Color.stoneInk)
                             }
                         }
-                        Text(project.liked ? "\(project.likesCount) likes · You liked this" : "\(project.likesCount) likes")
-                            .font(.caption)
-                            .foregroundStyle(Color.stoneMuted)
+                        HStack {
+                            Text(project.liked ? "\(project.likesCount) likes · You liked this" : "\(project.likesCount) likes")
+                                .font(.caption)
+                                .foregroundStyle(Color.stoneMuted)
+                            Spacer()
+                            Button(project.liked ? "Liked" : "Like") { Task { await like() } }
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.ecoOrange)
+                        }
+                        if let notice {
+                            Text(notice).font(.caption).foregroundStyle(Color.stoneMuted)
+                        }
+                        ForEach(comments) { comment in
+                            VStack(alignment: .leading, spacing: 4) {
+                                if !comment.author.isEmpty {
+                                    Text(comment.author).font(.caption.weight(.semibold)).foregroundStyle(Color.stoneInk)
+                                }
+                                Text(comment.body).font(.subheadline).foregroundStyle(Color.stoneMuted)
+                                if comment.userID == session.account?.user.id {
+                                    Button("Remove") { Task { await remove(comment) } }
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                                }
+                            }
+                        }
+                        TextField("Write a comment", text: $commentDraft, axis: .vertical)
+                            .textFieldStyle(.roundedBorder)
+                        Button("Post comment") { Task { await postComment() } }
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.ecoOrange)
+                            .disabled(commentDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         if let description = project.description, !description.isEmpty {
                             Text(description)
                                 .font(.body)
@@ -86,6 +117,54 @@ struct ProjectDetailView: View {
             phase = .failed(error.message)
         } catch {
             phase = .failed("This project could not be loaded.")
+        }
+    }
+
+    private func like() async {
+        do {
+            let result = try await client.likeProject(id: id)
+            if var current = project {
+                current.liked = result.liked
+                current.likesCount = result.likesCount
+                project = current
+            }
+            notice = nil
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            notice = text
+        } catch {
+            notice = "The like could not be saved."
+        }
+    }
+
+    private func postComment() async {
+        let body = commentDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !body.isEmpty else { return }
+        do {
+            let comment = try await client.commentOnProject(id: id, body: body)
+            comments.append(comment)
+            commentDraft = ""
+            notice = nil
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            notice = text
+        } catch {
+            notice = "The comment could not be posted."
+        }
+    }
+
+    private func remove(_ comment: ProjectComment) async {
+        do {
+            notice = try await client.deleteComment(id: comment.id)
+            comments.removeAll { $0.id == comment.id }
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            notice = text
+        } catch {
+            notice = "The comment could not be removed."
         }
     }
 }
@@ -501,6 +580,9 @@ struct JobDetailView: View {
     var client: APIClient = APIClient()
     @Environment(\.openURL) private var openURL
     @State private var job: JobCard?
+    @State private var coverLetter = ""
+    @State private var notice: String?
+    @State private var applying = false
     @State private var phase: LoadPhase = .loading
 
     var body: some View {
@@ -538,10 +620,20 @@ struct JobDetailView: View {
                         if let posted = job.postedAt, !posted.isEmpty {
                             Text(posted).font(.caption).foregroundStyle(Color.stoneMuted)
                         }
-                        if let address = job.applicationURL, let url = URL(string: address) {
+                        if let address = job.applicationURL, !address.isEmpty, let url = URL(string: address) {
                             Button("Apply") { openURL(url) }
                                 .buttonStyle(.borderedProminent)
                                 .tint(Color.ecoOrange)
+                        } else {
+                            TextField("Cover letter", text: $coverLetter, axis: .vertical)
+                                .textFieldStyle(.roundedBorder)
+                            Button(applying ? "Sending…" : "Apply") { Task { await apply() } }
+                                .buttonStyle(.borderedProminent)
+                                .tint(Color.ecoOrange)
+                                .disabled(applying)
+                        }
+                        if let notice {
+                            Text(notice).font(.subheadline).foregroundStyle(Color.stoneMuted)
                         }
                     }
                 }
@@ -564,6 +656,21 @@ struct JobDetailView: View {
             phase = .failed(error.message)
         } catch {
             phase = .failed("This job could not be loaded.")
+        }
+    }
+
+    private func apply() async {
+        applying = true
+        notice = nil
+        defer { applying = false }
+        do {
+            notice = try await client.applyToJob(id: id, coverLetter: coverLetter)
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            notice = text
+        } catch {
+            notice = "The application could not be sent."
         }
     }
 }
