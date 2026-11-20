@@ -152,12 +152,25 @@ nonisolated struct APIClient {
     }
 
     func createProject(_ body: [String: Any], cover: Data? = nil, coverName: String = "cover.jpg", media: [Data] = []) async throws -> String {
+        try await sendProject(path: "/api/creative/projects", method: "POST", body: body, cover: cover, coverName: coverName, media: media)
+    }
+
+    func projectEditor(id: Int) async throws -> ProjectEditor {
+        try await catalog(ProjectEditorResponse.self, path: "/api/creative/projects/\(id)/edit", missing: "This project can't be edited from the app yet.").project
+    }
+
+    func updateProject(id: Int, body: [String: Any], cover: Data? = nil, media: [Data] = []) async throws -> String {
+        try await sendProject(path: "/api/creative/projects/\(id)", method: "PUT", body: body, cover: cover, coverName: "cover.jpg", media: media)
+    }
+
+    private func sendProject(path: String, method: String, body: [String: Any], cover: Data?, coverName: String, media: [Data]) async throws -> String {
         guard cover != nil || !media.isEmpty else {
-            return try await submitJSON(path: "/api/creative/projects", body: body)
+            return try await submitJSON(path: path, method: method, body: body)
         }
         let boundary = "vfs-\(UUID().uuidString)"
         return try await submit(
-            path: "/api/creative/projects",
+            path: path,
+            method: method,
             body: projectForm(body, cover: cover, coverName: coverName, media: media, boundary: boundary),
             contentType: "multipart/form-data; boundary=\(boundary)"
         )
@@ -450,6 +463,8 @@ nonisolated struct APIClient {
                 part(key, text)
             } else if let list = value as? [String] {
                 for item in list { part("\(key)[]", item) }
+            } else if let numbers = value as? [Int] {
+                for number in numbers { part("\(key)[]", String(number)) }
             } else if let rows = value as? [[String: String]] {
                 for (index, row) in rows.enumerated() {
                     for (field, text) in row { part("\(key)[\(index)][\(field)]", text) }
