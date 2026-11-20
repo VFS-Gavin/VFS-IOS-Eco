@@ -447,6 +447,8 @@ struct WelcomeHubView: View {
                     HousingSeekingView(session: session)
                 case .housingProperty(let id):
                     HousingListingDetailView(session: session, id: id)
+                case .housingStudent(let id):
+                    RoommateDetailView(session: session, id: id)
                 case .ambassadors:
                     AmbassadorsView(session: session)
                 case .ambassador(let id):

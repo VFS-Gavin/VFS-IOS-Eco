@@ -175,6 +175,11 @@ struct AccountMenu: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                open = false
+                                push?(.calendarEvent(item.id))
+                            }
                             Divider().overlay(Color.stoneLine)
                         }
                     }

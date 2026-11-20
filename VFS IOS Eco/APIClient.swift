@@ -356,8 +356,21 @@ nonisolated struct APIClient {
         )
     }
 
-    func housingProperties() async throws -> [HousingListing] {
-        try await catalog(HousingPropertiesPage.self, path: "/api/welcome/housing/properties", missing: "Housing listings aren't available from the app yet.").listings
+    func housingProperties(bedrooms: String = "", furnished: String = "", pets: String = "", maxRent: String = "") async throws -> [HousingListing] {
+        var query: [URLQueryItem] = []
+        if !bedrooms.isEmpty { query.append(URLQueryItem(name: "bedrooms", value: bedrooms)) }
+        if !furnished.isEmpty { query.append(URLQueryItem(name: "furnished", value: furnished)) }
+        if !pets.isEmpty { query.append(URLQueryItem(name: "pets", value: pets)) }
+        if !maxRent.isEmpty { query.append(URLQueryItem(name: "max_rent", value: maxRent)) }
+        return try await authorized(HousingPropertiesPage.self, path: "/api/welcome/housing/properties", query: query).listings
+    }
+
+    func housingStudent(id: Int) async throws -> RoommateProfile {
+        try await authorized(RoommatePage.self, path: "/api/welcome/housing/students/\(id)").student
+    }
+
+    func removeTasteItem(id: Int) async throws {
+        _ = try await postJSON(OkFlag.self, path: "/api/creative/taste/items/\(id)", method: "DELETE")
     }
 
     func housingProperty(id: Int) async throws -> HousingListing {

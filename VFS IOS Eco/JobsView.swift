@@ -116,7 +116,10 @@ struct JobsView: View {
                 Text("No productions in this region.").foregroundStyle(Color.stoneMuted)
             }
             ForEach(rows) { production in
-                productionCard(production)
+                CreativeLink(route: .production(production.id)) {
+                    productionCard(production)
+                }
+                .buttonStyle(.plain)
             }
         }
     }

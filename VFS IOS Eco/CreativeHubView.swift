@@ -347,6 +347,10 @@ struct CreativeDestination: View {
             GrantApplyView(session: session, grantID: id)
         case .editPitches:
             PitchEditorView(session: session)
+        case .production(let id):
+            ProductionDetailView(session: session, id: id)
+        case .calendarEvent(let id):
+            CalendarEventView(session: session, id: id)
         case .account(let area):
             switch area {
             case .documentRequests:

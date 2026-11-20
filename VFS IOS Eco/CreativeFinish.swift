@@ -238,7 +238,12 @@ struct TasteEditorView: View {
                     .foregroundStyle(Color.stoneInk)
                 ForEach(board?.favorites ?? []) { item in
                     VStack(alignment: .leading, spacing: 6) {
-                        Toggle(item.title, isOn: highlightBinding(item))
+                        HStack {
+                            Toggle(item.title, isOn: highlightBinding(item))
+                            Button("Remove") { Task { await remove(item) } }
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                        }
                         if item.highlighted || notes[item.id] != nil {
                             TextField("Why it matters", text: noteBinding(item))
                                 .textFieldStyle(.roundedBorder)
@@ -322,6 +327,19 @@ struct TasteEditorView: View {
             message = text
         } catch {
             message = "That title could not be added."
+        }
+    }
+
+    private func remove(_ item: TasteItem) async {
+        do {
+            try await client.removeTasteItem(id: item.id)
+            await load()
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "That title could not be removed."
         }
     }
 

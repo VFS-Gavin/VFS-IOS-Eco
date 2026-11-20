@@ -61,10 +61,38 @@ struct HousingListingsView: View {
     @State private var listings: [HousingListing] = []
     @State private var message: String?
     @State private var loading = true
+    @State private var bedrooms = ""
+    @State private var furnished = ""
+    @State private var pets = ""
+    @State private var maxRent = ""
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
+                Picker("Bedrooms", selection: $bedrooms) {
+                    Text("Any beds").tag("")
+                    Text("Studio").tag("studio")
+                    Text("1").tag("1")
+                    Text("2").tag("2")
+                    Text("3").tag("3")
+                    Text("4").tag("4")
+                }
+                Picker("Furnished", selection: $furnished) {
+                    Text("Furnished or not").tag("")
+                    Text("Furnished").tag("yes")
+                    Text("Unfurnished").tag("no")
+                }
+                Picker("Pets", selection: $pets) {
+                    Text("Pets").tag("")
+                    Text("Pets allowed").tag("yes")
+                    Text("No pets").tag("no")
+                }
+                TextField("Max rent", text: $maxRent)
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.numberPad)
+                Button("Apply filters") { Task { await load() } }
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.welcomeRed)
                 if loading { ProgressView() }
                 if let message {
                     Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
@@ -97,7 +125,7 @@ struct HousingListingsView: View {
         loading = true
         defer { loading = false }
         do {
-            listings = try await APIClient().housingProperties()
+            listings = try await APIClient().housingProperties(bedrooms: bedrooms, furnished: furnished, pets: pets, maxRent: maxRent.trimmingCharacters(in: .whitespacesAndNewlines))
             if listings.isEmpty { message = "No listings yet." }
         } catch APIError.unauthorized {
             session.signOut()
@@ -133,6 +161,31 @@ struct HousingListingDetailView: View {
                     Text(listing.bedsLabel).font(.subheadline).foregroundStyle(Color.stoneInk)
                     if let detail = listing.detail, !detail.isEmpty {
                         Text(detail).font(.body).foregroundStyle(Color.stoneInk)
+                    }
+                    if let furnished = listing.furnished, !furnished.isEmpty {
+                        Text(furnished == "yes" ? "Furnished" : "Unfurnished").font(.subheadline).foregroundStyle(Color.stoneInk)
+                    }
+                    if let pets = listing.pets, !pets.isEmpty {
+                        Text(pets == "yes" ? "Pets allowed" : "No pets").font(.subheadline).foregroundStyle(Color.stoneInk)
+                    }
+                    if let smoking = listing.smoking, !smoking.isEmpty {
+                        Text(smoking == "yes" ? "Smoking allowed" : "No smoking").font(.subheadline).foregroundStyle(Color.stoneInk)
+                    }
+                    if let laundry = listing.laundry, !laundry.isEmpty {
+                        Text("Laundry: \(laundry.replacingOccurrences(of: "_", with: " "))").font(.subheadline).foregroundStyle(Color.stoneMuted)
+                    }
+                    if let parking = listing.parking, !parking.isEmpty {
+                        Text("Parking: \(parking.replacingOccurrences(of: "_", with: " "))").font(.subheadline).foregroundStyle(Color.stoneMuted)
+                    }
+                    ForEach(listing.photoURLs, id: \.self) { raw in
+                        if let url = AccountMedia.url(raw) {
+                            AsyncImage(url: url) { image in
+                                image.resizable().scaledToFit()
+                            } placeholder: {
+                                Color.stoneLine.frame(height: 160)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
                     }
                     Text("Register your interest")
                         .font(.headline)
@@ -217,6 +270,7 @@ struct HousingStudentsView: View {
                     Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
                 }
                 ForEach(students) { student in
+                    NavigationLink(value: WelcomeRoute.housingStudent(student.id)) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(student.name).font(.headline).foregroundStyle(Color.stoneInk)
                         Text(student.summary).font(.subheadline).foregroundStyle(Color.stoneMuted)
@@ -228,6 +282,8 @@ struct HousingStudentsView: View {
                     .padding(16)
                     .background(Color.card)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(20)
@@ -402,6 +458,10 @@ struct LandlordListingView: View {
     @State private var pets = "no"
     @State private var shared = "yes"
     @State private var description = ""
+    @State private var program = ""
+    @State private var size = ""
+    @State private var laundry = ""
+    @State private var parking = ""
     @State private var photos: [PhotosPickerItem] = []
     @State private var photoData: [Data] = []
     @State private var message: String?
@@ -456,6 +516,22 @@ struct LandlordListingView: View {
                 Picker("Shared accommodation", selection: $shared) {
                     Text("Yes").tag("yes")
                     Text("No").tag("no")
+                }
+                field("VFS program", $program)
+                field("Size in square feet", $size)
+                Picker("Laundry", selection: $laundry) {
+                    Text("Laundry").tag("")
+                    Text("In unit").tag("in_unit")
+                    Text("In building").tag("in_building")
+                    Text("Nearby").tag("nearby")
+                    Text("None").tag("none")
+                }
+                Picker("Parking", selection: $parking) {
+                    Text("Parking").tag("")
+                    Text("Included").tag("included")
+                    Text("Available").tag("available")
+                    Text("Street").tag("street")
+                    Text("None").tag("none")
                 }
                 field("Description", $description)
                 PhotosPicker(selection: $photos, maxSelectionCount: 8, matching: .images) {
@@ -512,7 +588,8 @@ struct LandlordListingView: View {
             "bedrooms": bedrooms, "furnished": furnished, "street_number": streetNumber, "street_name": streetName,
             "city": city, "postal_code": postalCode, "smoking_allowed": smoking, "pets_allowed": pets,
             "shared_accommodation": shared, "property_description": description,
-        ].mapValues { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            "vfs_program": program, "size_sqft": size, "laundry": laundry, "parking": parking,
+        ].mapValues { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.value.isEmpty }
         do {
             message = try await APIClient().submitLandlordListing(fields, photos: photoData)
         } catch APIError.unauthorized {
@@ -605,6 +682,12 @@ nonisolated struct HousingListing: Decodable, Identifiable {
     var bedrooms: String
     var detail: String?
     var photo: String?
+    var furnished: String?
+    var pets: String?
+    var smoking: String?
+    var laundry: String?
+    var parking: String?
+    var photoURLs: [String]
 
     var rentLabel: String { rent.isEmpty ? "" : "$\(rent)/mo" }
     var bedsLabel: String { bedrooms == "studio" ? "Studio" : "\(bedrooms) Beds" }
@@ -617,6 +700,9 @@ nonisolated struct HousingListing: Decodable, Identifiable {
         case bedrooms
         case detail = "property_description"
         case photo = "primary_photo_url"
+        case furnished, laundry, parking, photos
+        case pets = "pets_allowed"
+        case smoking = "smoking_allowed"
     }
 
     init(from decoder: Decoder) throws {
@@ -638,7 +724,19 @@ nonisolated struct HousingListing: Decodable, Identifiable {
         }
         detail = try container.decodeIfPresent(String.self, forKey: .detail)
         photo = try container.decodeIfPresent(String.self, forKey: .photo)
+        furnished = try container.decodeIfPresent(String.self, forKey: .furnished)
+        pets = try container.decodeIfPresent(String.self, forKey: .pets)
+        smoking = try container.decodeIfPresent(String.self, forKey: .smoking)
+        laundry = try container.decodeIfPresent(String.self, forKey: .laundry)
+        parking = try container.decodeIfPresent(String.self, forKey: .parking)
+        let shots = (try? container.decode([HousingPhoto].self, forKey: .photos)) ?? []
+        photoURLs = shots.compactMap(\.url)
+        if photoURLs.isEmpty, let photo, !photo.isEmpty { photoURLs = [photo] }
     }
+}
+
+private struct HousingPhoto: Decodable {
+    var url: String?
 }
 
 nonisolated struct HousingSeeker: Decodable, Identifiable {

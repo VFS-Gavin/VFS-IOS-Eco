@@ -178,6 +178,8 @@ enum CreativeRoute: Hashable {
     case createCollab
     case grantApply(Int)
     case editPitches
+    case production(Int)
+    case calendarEvent(Int)
 }
 
 enum AccountArea: String, Hashable {
@@ -348,6 +350,7 @@ nonisolated enum WelcomeRoute: Hashable {
     case housingLandlord
     case housingSeeking
     case housingProperty(Int)
+    case housingStudent(Int)
     case ambassadors
     case ambassador(Int)
     case messages
