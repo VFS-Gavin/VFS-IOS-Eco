@@ -108,6 +108,13 @@ struct ManagePortfolioView: View {
                     }
                     .buttonStyle(.plain)
                     HStack(spacing: 8) {
+                        NavigationLink {
+                            CreateProjectView(session: session, projectID: project.id) { await load() }
+                        } label: {
+                            Text("Edit")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.ecoOrange)
+                        }
                         Button(project.isDraft ? "Publish" : "Unpublish") {
                             Task { await publish(project) }
                         }
@@ -684,6 +691,7 @@ enum AccountMedia {
 
 struct CreateProjectView: View {
     @Bindable var session: AppSession
+    var projectID: Int? = nil
     var onSaved: () async -> Void
     var client: APIClient = APIClient()
     @Environment(\.dismiss) private var dismiss
@@ -712,6 +720,9 @@ struct CreateProjectView: View {
     @State private var gameDraft = ""
     @State private var models: [String] = []
     @State private var modelDraft = ""
+    @State private var existingMedia: [EditorMedia] = []
+    @State private var removedMedia: [Int] = []
+    @State private var existingCover: String?
     @State private var message: String?
     @State private var saving = false
 
@@ -721,7 +732,7 @@ struct CreateProjectView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Create New Project")
+                Text(projectID == nil ? "Create New Project" : "Edit Project")
                     .font(.system(size: 34, weight: .bold, design: .serif))
                     .foregroundStyle(Color.stoneInk)
                 field("Title", text: $title)
@@ -733,6 +744,22 @@ struct CreateProjectView: View {
                     Text("Other").tag("other")
                 }
                 coverPicker
+                if !keptMedia.isEmpty {
+                    Text("Current media")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.stoneMuted)
+                    ForEach(keptMedia) { item in
+                        HStack {
+                            Text(item.type ?? "Media")
+                                .font(.caption)
+                                .foregroundStyle(Color.stoneInk)
+                            Spacer()
+                            Button("Remove") { removedMedia.append(item.id) }
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                        }
+                    }
+                }
                 galleryPicker
                 urlList("YouTube / Vimeo", placeholder: "YouTube or Vimeo URL...", items: embeds, draft: $embedDraft, add: addEmbed)
                 urlList("Game Link", placeholder: "https://yourgame.itch.io/... or Steam / Epic Games Store link", items: gameLinks, draft: $gameDraft, add: addGame)
@@ -749,7 +776,7 @@ struct CreateProjectView: View {
                 if let message {
                     Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
                 }
-                Button(saving ? "Saving…" : (published ? "Publish Project" : "Save Draft")) {
+                Button(saving ? "Saving…" : (projectID == nil ? (published ? "Publish Project" : "Save Draft") : "Save Project")) {
                     Task { await save() }
                 }
                 .font(.subheadline.weight(.semibold))
@@ -762,8 +789,40 @@ struct CreateProjectView: View {
             .padding(20)
         }
         .background(Color.stone)
-        .navigationTitle("New Project")
+        .navigationTitle(projectID == nil ? "New Project" : "Edit Project")
         .navigationBarTitleDisplayMode(.inline)
+        .task { await loadEditor() }
+    }
+
+    private var keptMedia: [EditorMedia] {
+        existingMedia.filter { !removedMedia.contains($0.id) }
+    }
+
+    private func loadEditor() async {
+        guard let projectID else { return }
+        do {
+            let editor = try await client.projectEditor(id: projectID)
+            title = editor.title
+            details = editor.description ?? ""
+            if let category = editor.category, !category.isEmpty { self.category = category }
+            published = editor.isPublished
+            professional = editor.isProfessional
+            tags = editor.tags
+            tools = editor.toolsUsed
+            people = editor.collaborators.map { ProjectCredit(name: $0.name, role: $0.role ?? "") }
+            links = editor.externalLinks.map { ProjectLinkDraft(label: $0.label ?? "", url: $0.url) }
+            embeds = editor.videoEmbeds
+            gameLinks = editor.gameLinks
+            models = editor.modelEmbeds
+            existingCover = editor.coverURL
+            existingMedia = editor.media
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "This project can't be edited from the app yet."
+        }
     }
 
     private var coverPicker: some View {
@@ -771,6 +830,16 @@ struct CreateProjectView: View {
             Text("Cover")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.stoneMuted)
+            if coverData == nil, let existingCover, let url = AccountMedia.url(existingCover) {
+                AsyncImage(url: url) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    Color.stoneLine
+                }
+                .frame(height: 160)
+                .frame(maxWidth: .infinity)
+                .clipped()
+            }
             if let coverData, let image = UIImage(data: coverData) {
                 Image(uiImage: image)
                     .resizable()
@@ -987,7 +1056,12 @@ struct CreateProjectView: View {
             if !embeds.isEmpty { body["new_video_embeds"] = embeds }
             if !gameLinks.isEmpty { body["new_game_links"] = gameLinks }
             if !models.isEmpty { body["new_3d_embeds"] = models }
-            _ = try await client.createProject(body, cover: coverData, coverName: "cover.jpg", media: mediaData)
+            if !removedMedia.isEmpty { body["remove_media_ids"] = removedMedia }
+            if let projectID {
+                _ = try await client.updateProject(id: projectID, body: body, cover: coverData, media: mediaData)
+            } else {
+                _ = try await client.createProject(body, cover: coverData, coverName: "cover.jpg", media: mediaData)
+            }
             await onSaved()
             dismiss()
         } catch APIError.unauthorized {
@@ -995,7 +1069,7 @@ struct CreateProjectView: View {
         } catch APIError.message(let text) {
             message = text
         } catch {
-            message = "The project could not be created."
+            message = projectID == nil ? "The project could not be created." : "The project could not be saved."
         }
     }
 }

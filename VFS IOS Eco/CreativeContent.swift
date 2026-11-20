@@ -564,6 +564,73 @@ nonisolated struct OwnPitch: Decodable, Identifiable, Equatable {
     var description: String?
 }
 
+nonisolated struct ProjectEditorResponse: Decodable {
+    var project: ProjectEditor
+}
+
+nonisolated struct ProjectEditor: Decodable {
+    var title: String
+    var description: String?
+    var category: String?
+    var isPublished: Bool
+    var isProfessional: Bool
+    var tags: [String]
+    var toolsUsed: [String]
+    var collaborators: [EditorCredit]
+    var externalLinks: [EditorLink]
+    var videoEmbeds: [String]
+    var gameLinks: [String]
+    var modelEmbeds: [String]
+    var coverURL: String?
+    var media: [EditorMedia]
+
+    enum CodingKeys: String, CodingKey {
+        case title, description, category, tags, collaborators, media
+        case isPublished = "is_published"
+        case isProfessional = "is_professional"
+        case toolsUsed = "tools_used"
+        case externalLinks = "external_links"
+        case videoEmbeds = "video_embeds"
+        case gameLinks = "game_links"
+        case modelEmbeds = "model_embeds"
+        case coverURL = "cover_url"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        category = try container.decodeIfPresent(String.self, forKey: .category)
+        isPublished = (try? container.decode(Bool.self, forKey: .isPublished)) ?? false
+        isProfessional = (try? container.decode(Bool.self, forKey: .isProfessional)) ?? false
+        tags = (try? container.decode([String].self, forKey: .tags)) ?? []
+        toolsUsed = (try? container.decode([String].self, forKey: .toolsUsed)) ?? []
+        collaborators = (try? container.decode([EditorCredit].self, forKey: .collaborators)) ?? []
+        externalLinks = (try? container.decode([EditorLink].self, forKey: .externalLinks)) ?? []
+        videoEmbeds = (try? container.decode([String].self, forKey: .videoEmbeds)) ?? []
+        gameLinks = (try? container.decode([String].self, forKey: .gameLinks)) ?? []
+        modelEmbeds = (try? container.decode([String].self, forKey: .modelEmbeds)) ?? []
+        coverURL = try container.decodeIfPresent(String.self, forKey: .coverURL)
+        media = (try? container.decode([EditorMedia].self, forKey: .media)) ?? []
+    }
+}
+
+nonisolated struct EditorCredit: Decodable {
+    var name: String
+    var role: String?
+}
+
+nonisolated struct EditorLink: Decodable {
+    var url: String
+    var label: String?
+}
+
+nonisolated struct EditorMedia: Decodable, Identifiable {
+    var id: Int
+    var type: String?
+    var url: String?
+}
+
 nonisolated enum CreativeLabels {
     static func category(_ key: String?) -> String {
         guard let key, !key.isEmpty else { return "" }
