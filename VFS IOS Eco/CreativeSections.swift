@@ -148,6 +148,7 @@ struct FundingView: View {
                 Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
             }
             ForEach(rows) { grant in
+                CreativeLink(route: .grant(grant.id)) {
                 VStack(alignment: .leading, spacing: 6) {
                     if let status = grant.status, !status.isEmpty {
                         Text(statusLabel(status)).font(.caption2.weight(.bold)).foregroundStyle(green)
@@ -156,31 +157,19 @@ struct FundingView: View {
                     if let amount = grant.amount, !amount.isEmpty {
                         Text(amount).font(.subheadline.weight(.semibold)).foregroundStyle(green)
                     }
-                    if let description = grant.longDescription ?? grant.description, !description.isEmpty {
-                        Text(description).font(.subheadline).foregroundStyle(Color.stoneMuted)
+                    if let description = grant.description, !description.isEmpty {
+                        Text(description).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(3)
                     }
                     if let deadline = grant.deadline, !deadline.isEmpty {
                         Text(deadline).font(.caption).foregroundStyle(Color.stoneLabel)
-                    }
-                    if section == "vfs", grant.status == "open" {
-                        CreativeLink(route: .grantApply(grant.id)) {
-                            Text("Apply")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(green)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    if let link = grant.externalURL, let url = URL(string: link) {
-                        Button("Open listing") { openURL(url) }
-                            .buttonStyle(.plain)
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(green)
                     }
                 }
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.card)
                 .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -340,7 +329,6 @@ struct WorkshopCategoryView: View {
     @Bindable var session: AppSession
     var slug: String
     var client: APIClient = APIClient()
-    @Environment(\.openURL) private var openURL
     @State private var page: WorkshopCategoryPage?
     @State private var message: String?
     private let pink = Color(red: 219 / 255, green: 39 / 255, blue: 119 / 255)
@@ -356,6 +344,7 @@ struct WorkshopCategoryView: View {
                 }
                 if let page {
                     ForEach(page.courses) { course in
+                        CreativeLink(route: .workshopCourse(slug, course.slug)) {
                         VStack(alignment: .leading, spacing: 6) {
                             if let badge = course.badge, !badge.isEmpty {
                                 Text(badge).font(.caption2.weight(.bold)).foregroundStyle(pink)
@@ -365,13 +354,7 @@ struct WorkshopCategoryView: View {
                                 Text(dates).font(.caption).foregroundStyle(Color.stoneMuted)
                             }
                             if let summary = course.summary, !summary.isEmpty {
-                                Text(summary).font(.subheadline).foregroundStyle(Color.stoneMuted)
-                            }
-                            if let link = course.signupURL ?? course.url, let url = URL(string: link) {
-                                Button(course.signupURL == nil ? "Register on Eventbrite" : "Register") { openURL(url) }
-                                    .buttonStyle(.plain)
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(pink)
+                                Text(summary).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(3)
                             }
                         }
                         .padding(14)
@@ -379,8 +362,11 @@ struct WorkshopCategoryView: View {
                         .background(Color.card)
                         .overlay(alignment: .top) { Rectangle().fill(pink).frame(height: 3) }
                         .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
                     }
                     ForEach(page.events) { event in
+                        CreativeLink(route: .workshopEvent(slug, event.title)) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(event.title).font(.headline).foregroundStyle(Color.stoneInk)
                             if let dates = event.dates, !dates.isEmpty {
@@ -390,19 +376,15 @@ struct WorkshopCategoryView: View {
                                 Text(location).font(.caption).foregroundStyle(Color.stoneMuted)
                             }
                             if let description = event.description, !description.isEmpty {
-                                Text(description).font(.subheadline).foregroundStyle(Color.stoneMuted)
-                            }
-                            if let link = event.url, let url = URL(string: link) {
-                                Button("Open event") { openURL(url) }
-                                    .buttonStyle(.plain)
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(pink)
+                                Text(description).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(3)
                             }
                         }
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.card)
                         .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }

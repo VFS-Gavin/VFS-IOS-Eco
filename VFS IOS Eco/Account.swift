@@ -180,6 +180,10 @@ enum CreativeRoute: Hashable {
     case editPitches
     case production(Int)
     case calendarEvent(Int)
+    case facility(Int)
+    case grant(Int)
+    case workshopCourse(String, String)
+    case workshopEvent(String, String)
 }
 
 enum AccountArea: String, Hashable {

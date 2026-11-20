@@ -564,8 +564,15 @@ struct CollabCreateView: View {
     @State private var roleType = "crew"
     @State private var roles = ""
     @State private var location = ""
+    @State private var projectType = ""
     @State private var remote = false
     @State private var paid = false
+    @State private var deadline = ""
+    @State private var shootStart = ""
+    @State private var shootEnd = ""
+    @State private var contact = ""
+    @State private var applyURL = ""
+    @State private var showContact = true
     @State private var message: String?
     @State private var saving = false
 
@@ -577,15 +584,32 @@ struct CollabCreateView: View {
                     .foregroundStyle(Color.stoneInk)
                 TextField("Title", text: $title).textFieldStyle(.roundedBorder)
                 TextField("Description", text: $details, axis: .vertical).textFieldStyle(.roundedBorder)
-                Picker("Roles", selection: $roleType) {
+                Picker("Project type", selection: $projectType) {
+                    Text("Choose a type").tag("")
+                    ForEach(["Short Film", "Music Video", "Animation", "Game", "Web Series", "Podcast", "ADR / Redubbing", "Portfolio Piece", "Other"], id: \.self) { Text($0).tag($0) }
+                }
+                Picker("These roles are", selection: $roleType) {
                     Text("Crew").tag("crew")
                     Text("Cast").tag("cast")
                     Text("Both").tag("both")
                 }
                 TextField("Roles needed, comma separated", text: $roles).textFieldStyle(.roundedBorder)
-                TextField("Location", text: $location).textFieldStyle(.roundedBorder)
-                Toggle("Remote ok", isOn: $remote)
+                Picker("Where", selection: $location) {
+                    Text("Choose a city").tag("")
+                    Text("Vancouver").tag("Vancouver")
+                    Text("Surrey").tag("Surrey")
+                    Text("Burnaby").tag("Burnaby")
+                    Text("New Westminster").tag("New Westminster")
+                    Text("Remote").tag("Remote")
+                }
+                Toggle("People can join remotely", isOn: $remote)
                 Toggle("Paid", isOn: $paid)
+                TextField("Apply by (YYYY-MM-DD)", text: $deadline).textFieldStyle(.roundedBorder)
+                TextField("Shoot starts (YYYY-MM-DD)", text: $shootStart).textFieldStyle(.roundedBorder)
+                TextField("Shoot ends (YYYY-MM-DD)", text: $shootEnd).textFieldStyle(.roundedBorder)
+                TextField("What should they do?", text: $contact, axis: .vertical).textFieldStyle(.roundedBorder)
+                TextField("https://", text: $applyURL).textFieldStyle(.roundedBorder)
+                Toggle("Let people message you from the post", isOn: $showContact)
                 if let message {
                     Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
                 }
@@ -614,11 +638,22 @@ struct CollabCreateView: View {
             "role_type": roleType,
             "remote_ok": remote,
             "is_paid": paid,
-            "show_contact_button": true,
+            "show_contact_button": showContact,
         ]
+        if !projectType.isEmpty { body["project_type"] = projectType }
         if !needed.isEmpty { body["roles_needed"] = needed }
         let place = location.trimmingCharacters(in: .whitespacesAndNewlines)
         if !place.isEmpty { body["location"] = place }
+        let due = deadline.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !due.isEmpty { body["deadline"] = due }
+        let start = shootStart.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !start.isEmpty { body["shoot_start_date"] = start }
+        let end = shootEnd.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !end.isEmpty { body["shoot_end_date"] = end }
+        let note = contact.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !note.isEmpty { body["contact_instructions"] = note }
+        let link = applyURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !link.isEmpty { body["apply_url"] = link }
         do {
             message = try await client.createCollab(body)
             dismiss()
@@ -644,9 +679,13 @@ struct GrantApplyView: View {
     @State private var help = ""
     @State private var team = ""
     @State private var timeline = ""
+    @State private var portfolio = ""
+    @State private var projectID = 0
+    @State private var ownProjects: [ManagedProject] = []
     @State private var message: String?
     @State private var saving = false
     @State private var filled = false
+    private let years = ["Year 1", "Year 2", "Alumni (within 3 years)"]
 
     var body: some View {
         ScrollView {
@@ -654,13 +693,25 @@ struct GrantApplyView: View {
                 Text("Grant application")
                     .font(.system(size: 34, weight: .bold, design: .serif))
                     .foregroundStyle(Color.stoneInk)
-                field("Name", $name)
-                field("Program", $program)
-                field("Year", $year)
-                field("Project title", $projectTitle)
-                field("Concept", $concept)
-                field("How funding helps", $help)
-                field("Team members", $team)
+                field("Full Name", $name)
+                field("VFS Program", $program)
+                Picker("Year / Status", selection: $year) {
+                    Text("Select one").tag("")
+                    ForEach(years, id: \.self) { Text($0).tag($0) }
+                }
+                if !ownProjects.isEmpty {
+                    Picker("Link a Portfolio Project", selection: $projectID) {
+                        Text("None (use a link instead)").tag(0)
+                        ForEach(ownProjects) { Text($0.title).tag($0.id) }
+                    }
+                }
+                if projectID == 0 {
+                    field("Portfolio Link", $portfolio)
+                }
+                field("Project Title", $projectTitle)
+                field("Project Concept", $concept)
+                field("How Will You Use the Funding?", $help)
+                field("Team Members", $team)
                 field("Timeline", $timeline)
                 if let message {
                     Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
@@ -678,10 +729,13 @@ struct GrantApplyView: View {
         .background(Color.stone)
         .navigationTitle("Apply")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
+        .task {
             if !filled {
                 name = session.account?.user.name ?? ""
                 filled = true
+            }
+            if let board = try? await client.managePortfolio() {
+                ownProjects = board.projects
             }
         }
     }
@@ -693,7 +747,7 @@ struct GrantApplyView: View {
     private func submit() async {
         saving = true
         defer { saving = false }
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "funding_grant_id": grantID,
             "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
             "email": session.account?.user.email ?? "",
@@ -702,9 +756,16 @@ struct GrantApplyView: View {
             "project_title": projectTitle.trimmingCharacters(in: .whitespacesAndNewlines),
             "concept": concept.trimmingCharacters(in: .whitespacesAndNewlines),
             "how_funding_helps": help.trimmingCharacters(in: .whitespacesAndNewlines),
-            "team_members": team.trimmingCharacters(in: .whitespacesAndNewlines),
             "timeline": timeline.trimmingCharacters(in: .whitespacesAndNewlines),
         ]
+        let members = team.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !members.isEmpty { body["team_members"] = members }
+        if projectID > 0 {
+            body["creative_project_id"] = projectID
+        } else {
+            let link = portfolio.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !link.isEmpty { body["portfolio_link"] = link }
+        }
         do {
             message = try await client.applyForGrant(body)
         } catch APIError.unauthorized {
