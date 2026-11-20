@@ -372,6 +372,10 @@ struct WelcomeHubView: View {
                     }
                 }
                 .padding(20)
+                SiteFooter(session: session) { route in
+                    session.queuedRoute = route
+                    openCreative()
+                }
             }
             .background {
                 ZStack {

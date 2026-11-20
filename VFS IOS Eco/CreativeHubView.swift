@@ -143,6 +143,9 @@ struct CreativeHubScreen: View {
                     }
                 }
                 .padding(20)
+                SiteFooter(session: session) { route in
+                    path.append(route)
+                }
             }
             .background(Color.stone)
             .navigationTitle("Creative ECOsystem")
@@ -251,7 +254,16 @@ struct CreativeDestination: View {
         case .jobs:
             JobsView(session: session)
         case .area(let kind):
-            CreativeAreaView(kind: kind)
+            switch kind {
+            case .discovery:
+                DiscoveryView(session: session)
+            case .facilities:
+                FacilitiesView(session: session)
+            case .studios:
+                StudiosView()
+            default:
+                CreativeAreaView(kind: kind)
+            }
         case .account(let area):
             AccountAreaView(area: area)
         }
@@ -262,17 +274,34 @@ struct AccountAreaView: View {
     var area: AccountArea
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(area.title)
-                .font(.system(size: 36, weight: .bold, design: .serif))
-                .foregroundStyle(Color.stoneInk)
-            Text("This page is on the website. The app screen for it is next.")
-                .font(.body)
-                .foregroundStyle(Color.stoneMuted)
-            Spacer()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(area.title)
+                    .font(.system(size: 36, weight: .bold, design: .serif))
+                    .foregroundStyle(Color.stoneInk)
+                if area == .terms {
+                    Text(TermsCatalog.document.intro)
+                        .font(.body)
+                        .foregroundStyle(Color.stoneMuted)
+                    ForEach(TermsCatalog.document.sections) { section in
+                        Text(section.title)
+                            .font(.headline)
+                            .foregroundStyle(Color.stoneInk)
+                        ForEach(section.paragraphs, id: \.self) { paragraph in
+                            Text(paragraph)
+                                .font(.body)
+                                .foregroundStyle(Color.stoneMuted)
+                        }
+                    }
+                } else {
+                    Text("This page is on the website. The app screen for it is next.")
+                        .font(.body)
+                        .foregroundStyle(Color.stoneMuted)
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.stone)
         .navigationTitle(area.title)
         .navigationBarTitleDisplayMode(.inline)

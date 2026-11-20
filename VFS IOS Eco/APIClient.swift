@@ -209,10 +209,42 @@ nonisolated struct APIClient {
         try await authorized(CollabDetailResponse.self, path: "/api/creative/collabs/\(id)").collab
     }
 
-    func jobs(search: String, page: Int, partnerPage: Int) async throws -> JobsBoard {
+    func jobs(search: String, page: Int, partnerPage: Int, type: String = "", remote: Bool = false, level: String = "", sort: String = "") async throws -> JobsBoard {
         var query = pageQuery(search: search, page: page)
         query.append(URLQueryItem(name: "partner_page", value: String(partnerPage)))
+        if !type.isEmpty { query.append(URLQueryItem(name: "type", value: type)) }
+        if remote { query.append(URLQueryItem(name: "remote", value: "1")) }
+        if !level.isEmpty { query.append(URLQueryItem(name: "level", value: level)) }
+        if !sort.isEmpty { query.append(URLQueryItem(name: "sort", value: sort)) }
         return try await authorized(JobsBoard.self, path: "/api/creative/jobs", query: query)
+    }
+
+    func discoverySearch(query: String, type: String) async throws -> [DiscoveryHit] {
+        var items = [URLQueryItem(name: "q", value: query)]
+        if !type.isEmpty { items.append(URLQueryItem(name: "type", value: type)) }
+        let response = try await send(path: "/api/creative/discovery/search", method: "GET", body: nil, authorize: true, query: items)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        if response.status == 404 {
+            throw APIError.message("Search isn't available from the app yet.")
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(DiscoverySearchResponse.self, from: response.data).results
+    }
+
+    func facilities() async throws -> [FacilityItem] {
+        let response = try await send(path: "/api/creative/facilities", method: "GET", body: nil, authorize: true)
+        if response.status == 401 {
+            KeychainStore.clearToken()
+            throw APIError.unauthorized
+        }
+        if response.status == 404 {
+            throw APIError.message("The booking list isn't available from the app yet.")
+        }
+        try throwIfNeeded(response, allowSuccess: true)
+        return try JSONDecoder().decode(FacilitiesResponse.self, from: response.data).facilities
     }
 
     func job(id: Int) async throws -> JobCard {
