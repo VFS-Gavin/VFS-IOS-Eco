@@ -82,7 +82,7 @@ struct PortalTabs: View {
         VStack(spacing: 0) {
             Group {
                 if tab == 0 {
-                    WelcomeHubView(session: session)
+                    WelcomeHubView(session: session, openCreative: { tab = 1 })
                 } else {
                     PortfolioScreen(session: session, navigationTitle: "Creative ECOsystem", industryLine: false)
                 }
@@ -251,6 +251,7 @@ struct SignInView: View {
 
 struct WelcomeHubView: View {
     @Bindable var session: AppSession
+    var openCreative: () -> Void = {}
     @State private var search = ""
 
     private var accent: Color {
@@ -290,23 +291,27 @@ struct WelcomeHubView: View {
                     WelcomeAlerts(session: session)
 
                     if query.isEmpty && (session.welcome?.setUpPortfolio == true || session.account?.setUpPortfolio == true) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Creative ECOsystem")
-                                .font(.system(size: 11, weight: .bold))
-                                .tracking(1.4)
-                                .foregroundStyle(Color(red: 225 / 255, green: 29 / 255, blue: 72 / 255))
-                            Text("Set Up Your Portfolio")
-                                .font(.system(size: 26, weight: .black))
-                                .foregroundStyle(Color.stoneInk)
-                            Text("You came here to share your work. Open Creative ECOsystem to create your profile and start adding projects.")
-                                .font(.subheadline)
-                                .foregroundStyle(Color.stoneMuted)
+                        Button(action: openCreative) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Creative ECOsystem")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .tracking(1.4)
+                                    .foregroundStyle(Color(red: 225 / 255, green: 29 / 255, blue: 72 / 255))
+                                Text("Set Up Your Portfolio")
+                                    .font(.system(size: 26, weight: .black))
+                                    .foregroundStyle(Color.stoneInk)
+                                Text("You came here to share your work. Open Creative ECOsystem to create your profile and start adding projects.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.stoneMuted)
+                            }
+                            .padding(20)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(red: 244 / 255, green: 63 / 255, blue: 94 / 255).opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 24))
+                            .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color(red: 244 / 255, green: 63 / 255, blue: 94 / 255).opacity(0.3), lineWidth: 1))
                         }
-                        .padding(20)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(red: 244 / 255, green: 63 / 255, blue: 94 / 255).opacity(0.08))
-                        .clipShape(RoundedRectangle(cornerRadius: 24))
-                        .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color(red: 244 / 255, green: 63 / 255, blue: 94 / 255).opacity(0.3), lineWidth: 1))
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("set-up-portfolio")
                     }
 
                     if showsAnnouncements {

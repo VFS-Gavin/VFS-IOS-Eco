@@ -338,5 +338,11 @@ final class VFS_IOS_EcoTests: XCTestCase {
         """.data(using: .utf8)!
         let reduced = try JSONDecoder().decode(Account.self, from: account)
         XCTAssertEqual(reduced.creativeSections, [.portfolio, .jobs])
+
+        let flagged = """
+        {"home":"welcome","welcome_hub":true,"creative":"full","set_up_portfolio":true,"user":{"id":4,"name":"Ada","email":"ada@vfs.edu","role":"student"},"sections":{"portfolio":true,"collabs":false,"jobs":true,"funding":false}}
+        """.data(using: .utf8)!
+        let student = try JSONDecoder().decode(Account.self, from: flagged)
+        XCTAssertEqual(student.creativeSections, [.portfolio, .jobs])
     }
 }

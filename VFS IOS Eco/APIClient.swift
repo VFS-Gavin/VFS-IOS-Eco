@@ -94,6 +94,10 @@ nonisolated struct APIClient {
         return try JSONDecoder().decode(TermsDocument.self, from: response.data)
     }
 
+    func logout() async {
+        _ = try? await send(path: "/api/auth/logout", method: "POST", body: [:], authorize: true)
+    }
+
     func me() async throws -> Account {
         let response = try await send(path: "/api/me", method: "GET", body: nil, authorize: true)
         if response.status == 401 {
