@@ -176,6 +176,11 @@ struct DiscoveryView: View {
                 discoveryRowBody(hit)
             }
             .buttonStyle(.plain)
+        } else if hit.resultType == "person" || hit.type == "person" {
+            CreativeLink(route: .discoveryPerson(hit.id)) {
+                discoveryRowBody(hit)
+            }
+            .buttonStyle(.plain)
         } else if let type = hit.type, ["film", "tv", "game", "book", "youtube"].contains(type) {
             CreativeLink(route: .discoveryTitle(type, hit.id)) {
                 discoveryRowBody(hit)

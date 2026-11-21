@@ -115,11 +115,21 @@ nonisolated struct CollabCard: Decodable, Equatable, Identifiable {
     var location: String?
     var remote: Bool?
     var paid: Bool?
+    var shootStart: String?
+    var shootEnd: String?
+    var contactInstructions: String?
+    var applyURL: String?
+    var showContactButton: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id, title, status, type, role, deadline, description, location, remote, paid
         case coverURL = "cover_url"
         case ownerName = "owner_name"
+        case shootStart = "shoot_start_date"
+        case shootEnd = "shoot_end_date"
+        case contactInstructions = "contact_instructions"
+        case applyURL = "apply_url"
+        case showContactButton = "show_contact_button"
     }
 }
 

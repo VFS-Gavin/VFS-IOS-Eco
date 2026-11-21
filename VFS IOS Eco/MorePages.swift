@@ -1,5 +1,179 @@
 import SwiftUI
 
+nonisolated struct PersonPage: Decodable {
+    var person: PersonRecord
+}
+
+nonisolated struct PersonRecord: Decodable {
+    var name: String
+    var biography: String?
+    var department: String?
+    var photo: String?
+    var cast: [PersonCredit]
+    var crew: [PersonCredit]
+
+    enum CodingKeys: String, CodingKey {
+        case name, biography, department, photo, cast, crew
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        biography = try container.decodeIfPresent(String.self, forKey: .biography)
+        department = try container.decodeIfPresent(String.self, forKey: .department)
+        photo = try container.decodeIfPresent(String.self, forKey: .photo)
+        cast = try container.decodeIfPresent([PersonCredit].self, forKey: .cast) ?? []
+        crew = try container.decodeIfPresent([PersonCredit].self, forKey: .crew) ?? []
+    }
+}
+
+nonisolated struct PersonCredit: Decodable, Identifiable {
+    var id: String
+    var title: String
+    var type: String
+    var year: String?
+    var poster: String?
+
+    var titleType: String? {
+        switch type {
+        case "movie", "film": "film"
+        case "tv": "tv"
+        default: nil
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, type, year, poster
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let text = try? container.decode(String.self, forKey: .id) {
+            id = text
+        } else if let number = try? container.decode(Int.self, forKey: .id) {
+            id = String(number)
+        } else {
+            id = ""
+        }
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        type = try container.decodeIfPresent(String.self, forKey: .type) ?? ""
+        if let text = try? container.decode(String.self, forKey: .year), !text.isEmpty {
+            year = text
+        } else if let number = try? container.decode(Int.self, forKey: .year) {
+            year = String(number)
+        } else {
+            year = nil
+        }
+        poster = try container.decodeIfPresent(String.self, forKey: .poster)
+    }
+}
+
+struct PersonDetailView: View {
+    @Bindable var session: AppSession
+    var id: String
+    var client: APIClient = APIClient()
+    @State private var person: PersonRecord?
+    @State private var message: String?
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                if let person {
+                    if let photo = person.photo, let url = URL(string: photo) {
+                        AsyncImage(url: url) { image in
+                            image.resizable().scaledToFill()
+                        } placeholder: {
+                            Color.stoneLine
+                        }
+                        .frame(width: 120, height: 160)
+                        .clipped()
+                    }
+                    Text(person.name.isEmpty ? "Person" : person.name)
+                        .font(.system(size: 34, weight: .bold, design: .serif))
+                        .foregroundStyle(Color.stoneInk)
+                    if let department = person.department, !department.isEmpty, department != "Unknown" {
+                        Text(department).font(.subheadline.weight(.semibold)).foregroundStyle(Color(red: 14 / 255, green: 165 / 255, blue: 233 / 255))
+                    }
+                    if let biography = person.biography, !biography.isEmpty {
+                        Text(biography).font(.body).foregroundStyle(Color.stoneInk)
+                    }
+                    creditList("Cast", person.cast)
+                    creditList("Crew", person.crew)
+                } else if let message {
+                    Text(message).foregroundStyle(Color.stoneInk)
+                } else {
+                    ProgressView()
+                }
+            }
+            .padding(20)
+        }
+        .background(Color.stone)
+        .navigationTitle("Person")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await load() }
+    }
+
+    @ViewBuilder
+    private func creditList(_ heading: String, _ rows: [PersonCredit]) -> some View {
+        if !rows.isEmpty {
+            Text(heading)
+                .font(.headline)
+                .foregroundStyle(Color.stoneInk)
+                .padding(.top, 8)
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, credit in
+                creditRow(credit)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func creditRow(_ credit: PersonCredit) -> some View {
+        let card = HStack(alignment: .top, spacing: 12) {
+            if let poster = credit.poster, let url = URL(string: poster) {
+                AsyncImage(url: url) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    Color.stoneLine
+                }
+                .frame(width: 42, height: 58)
+                .clipped()
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(credit.title.isEmpty ? "Untitled" : credit.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.stoneInk)
+                if let year = credit.year, !year.isEmpty {
+                    Text(year).font(.caption).foregroundStyle(Color.stoneMuted)
+                }
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.card)
+        .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+
+        if let type = credit.titleType, !credit.id.isEmpty {
+            CreativeLink(route: .discoveryTitle(type, credit.id)) { card }
+                .buttonStyle(.plain)
+        } else {
+            card
+        }
+    }
+
+    private func load() async {
+        do {
+            person = try await client.discoveryPerson(id: id)
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "This person could not be loaded."
+        }
+    }
+}
+
+
 struct FacilityDetailView: View {
     @Bindable var session: AppSession
     var id: Int

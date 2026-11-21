@@ -267,6 +267,11 @@ nonisolated struct APIClient {
         _ = try await postJSON(OkFlag.self, path: "/api/creative/taste/seen", body: body)
     }
 
+    func discoveryPerson(id: String) async throws -> PersonRecord {
+        let safeID = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        return try await authorized(PersonPage.self, path: "/api/creative/discovery/person/\(safeID)").person
+    }
+
     func discoveryTitle(type: String, externalID: String) async throws -> DiscoveryTitlePage {
         let safeType = type.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? type
         let safeID = externalID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? externalID
