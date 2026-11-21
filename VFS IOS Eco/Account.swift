@@ -174,6 +174,7 @@ enum CreativeRoute: Hashable {
     case editProject(Int)
     case studio(String)
     case discoveryTitle(String, String)
+    case discoveryPerson(String)
     case tasteEditor
     case createCollab
     case grantApply(Int)

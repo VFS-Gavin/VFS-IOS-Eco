@@ -508,6 +508,7 @@ struct CollabDetailView: View {
     @Bindable var session: AppSession
     var id: Int
     var client: APIClient = APIClient()
+    @Environment(\.openURL) private var openURL
     @State private var collab: CollabCard?
     @State private var phase: LoadPhase = .loading
     @State private var inquiryName = ""
@@ -551,13 +552,16 @@ struct CollabDetailView: View {
                             Text(owner).font(.subheadline).foregroundStyle(Color.stoneMuted)
                         }
                         if let deadline = collab.deadline, !deadline.isEmpty {
-                            Text(deadline).font(.subheadline).foregroundStyle(Color.stoneMuted)
+                            Text("Apply by \(deadline)").font(.subheadline).foregroundStyle(Color.stoneMuted)
+                        }
+                        if let window = shootWindow(collab) {
+                            Text("Shoot \(window)").font(.subheadline).foregroundStyle(Color.stoneMuted)
                         }
                         if let location = collab.location, !location.isEmpty {
                             Text(location).font(.subheadline).foregroundStyle(Color.stoneMuted)
                         }
                         if collab.remote == true {
-                            Text("Remote").font(.caption.weight(.semibold)).foregroundStyle(Color.ecoOrange)
+                            Text("People can join remotely").font(.caption.weight(.semibold)).foregroundStyle(Color.ecoOrange)
                         }
                         if collab.paid == true {
                             Text("Paid").font(.caption.weight(.semibold)).foregroundStyle(Color.ecoOrange)
@@ -565,6 +569,17 @@ struct CollabDetailView: View {
                         if let description = collab.description, !description.isEmpty {
                             Text(description).font(.body).foregroundStyle(Color.stoneMuted)
                         }
+                        if let instructions = collab.contactInstructions, !instructions.isEmpty {
+                            Text(instructions).font(.body).foregroundStyle(Color.stoneInk)
+                        }
+                        if let link = collab.applyURL, let url = URL(string: link) {
+                            Button(link) { openURL(url) }
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.collabPurple)
+                        }
+                        if collab.showContactButton == false {
+                            EmptyView()
+                        } else {
                         Text("Inquire")
                             .font(.headline)
                             .foregroundStyle(Color.stoneInk)
@@ -581,6 +596,7 @@ struct CollabDetailView: View {
                         if let inquiryNotice {
                             Text(inquiryNotice).font(.caption).foregroundStyle(Color.stoneMuted)
                         }
+                        }
                     }
                 }
             }
@@ -594,6 +610,15 @@ struct CollabDetailView: View {
             if inquiryEmail.isEmpty { inquiryEmail = session.account?.user.email ?? "" }
             await load()
         }
+    }
+
+    private func shootWindow(_ collab: CollabCard) -> String? {
+        let start = collab.shootStart?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let end = collab.shootEnd?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !start.isEmpty, !end.isEmpty { return "\(start) – \(end)" }
+        if !start.isEmpty { return start }
+        if !end.isEmpty { return end }
+        return nil
     }
 
     private func load() async {
