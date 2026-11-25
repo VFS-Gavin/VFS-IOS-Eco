@@ -341,6 +341,8 @@ struct CreativeDestination: View {
             DiscoveryTitleView(session: session, type: type, externalID: externalID)
         case .discoveryPerson(let id):
             PersonDetailView(session: session, id: id)
+        case .pitch(let id):
+            PitchDetailView(session: session, id: id)
         case .tasteEditor:
             TasteEditorView(session: session)
         case .createCollab:

@@ -35,7 +35,10 @@ struct ODayView: View {
                         .foregroundStyle(Color.stoneInk)
                 case .ready:
                     if let next = upcoming.first {
-                        nextTicket(next)
+                        NavigationLink(value: WelcomeRoute.oDayDate(next.id)) {
+                            nextTicket(next)
+                        }
+                        .buttonStyle(.plain)
                     } else {
                         empty
                     }
@@ -100,6 +103,7 @@ struct ODayView: View {
                 .tracking(1.4)
                 .foregroundStyle(Color.stoneMuted)
             ForEach(Array(upcoming.enumerated()), id: \.element.id) { index, schedule in
+                NavigationLink(value: WelcomeRoute.oDayDate(schedule.id)) {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("O-Day")
@@ -125,9 +129,12 @@ struct ODayView: View {
                         Text(notes)
                             .font(.footnote)
                             .foregroundStyle(Color.stoneMuted)
+                            .lineLimit(2)
                     }
                 }
                 .guideCard()
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -206,6 +213,71 @@ struct ODayView: View {
             phase = .failed(error.message)
         } catch {
             phase = .failed("O-Day could not be loaded.")
+        }
+    }
+}
+
+struct ODayDateView: View {
+    @Bindable var session: AppSession
+    var id: Int
+    var client: APIClient = APIClient()
+    @State private var schedule: ODaySchedule?
+    @State private var message: String?
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if let schedule {
+                    Text("O-Day")
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(1.2)
+                        .foregroundStyle(Color.welcomeRed)
+                    Text(WelcomeDates.longWeekday(schedule.orientationDate))
+                        .font(.system(size: 34, weight: .bold, design: .serif))
+                        .foregroundStyle(Color.stoneInk)
+                    labeled("Start Time", schedule.time)
+                    labeled("Location", schedule.place)
+                    if schedule.place != "TBD", let address = schedule.address, !address.isEmpty {
+                        Text(address).font(.subheadline).foregroundStyle(Color.stoneMuted)
+                    }
+                    Text("Program start: \(WelcomeDates.monthDayYear(schedule.startDate))")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.welcomeRed)
+                    if let notes = schedule.notes, !notes.isEmpty {
+                        Text(notes).font(.body).foregroundStyle(Color.stoneInk)
+                    }
+                } else if let message {
+                    Text(message).foregroundStyle(Color.stoneInk)
+                } else {
+                    ProgressView()
+                }
+            }
+            .padding(20)
+        }
+        .deskPage(tint: .pageAmber)
+        .navigationTitle("O-Day")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await load() }
+    }
+
+    private func labeled(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            Text(value).font(.headline).foregroundStyle(Color.stoneInk)
+        }
+    }
+
+    private func load() async {
+        do {
+            let schedules = try await client.oday().schedules
+            schedule = schedules.first { $0.id == id }
+            if schedule == nil { message = "This orientation date isn't on the list." }
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "This orientation date could not be loaded."
         }
     }
 }

@@ -250,6 +250,14 @@ struct CalendarEventView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if let event {
+                    if let raw = event.imageURL, let url = AccountMedia.url(raw) {
+                        AsyncImage(url: url) { image in
+                            image.resizable().scaledToFit()
+                        } placeholder: {
+                            Color.stoneLine.frame(height: 160)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
                     if let date = event.dateLabel, !date.isEmpty {
                         Text(date).font(.caption.weight(.semibold)).foregroundStyle(Color(red: 219 / 255, green: 39 / 255, blue: 119 / 255))
                     }

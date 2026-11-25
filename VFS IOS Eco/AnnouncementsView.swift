@@ -182,6 +182,7 @@ struct StudentAnnouncementsView: View {
                         .guideCard()
                     } else {
                         ForEach(events) { event in
+                            NavigationLink(value: WelcomeRoute.studentEvent(event.id)) {
                             VStack(alignment: .leading, spacing: 6) {
                                 if let type = event.type, !type.isEmpty {
                                     Text(type.uppercased())
@@ -211,9 +212,12 @@ struct StudentAnnouncementsView: View {
                                     Text(summary)
                                         .font(.subheadline)
                                         .foregroundStyle(Color.stoneMuted)
+                                        .lineLimit(3)
                                 }
                             }
                             .guideCard()
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -237,6 +241,67 @@ struct StudentAnnouncementsView: View {
             phase = .failed(error.message)
         } catch {
             phase = .failed("Announcements could not be loaded.")
+        }
+    }
+}
+
+struct StudentEventView: View {
+    @Bindable var session: AppSession
+    var id: String
+    var client: APIClient = APIClient()
+    @State private var event: StudentEventItem?
+    @State private var message: String?
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                if let event {
+                    if let type = event.type, !type.isEmpty {
+                        Text(type.uppercased())
+                            .font(.system(size: 11, weight: .bold))
+                            .tracking(1.1)
+                            .foregroundStyle(Color.welcomeRed)
+                    }
+                    Text(event.title)
+                        .font(.system(size: 34, weight: .bold, design: .serif))
+                        .foregroundStyle(Color.stoneInk)
+                    if let date = event.date, !date.isEmpty {
+                        Text(date).font(.subheadline).foregroundStyle(Color.stoneMuted)
+                    }
+                    if let time = event.time, !time.isEmpty {
+                        Text(time).font(.subheadline).foregroundStyle(Color.stoneMuted)
+                    }
+                    if let location = event.location, !location.isEmpty {
+                        Text(location).font(.subheadline).foregroundStyle(Color.stoneInk)
+                    }
+                    if let summary = event.summary, !summary.isEmpty {
+                        Text(summary).font(.body).foregroundStyle(Color.stoneInk)
+                    }
+                } else if let message {
+                    Text(message).foregroundStyle(Color.stoneInk)
+                } else {
+                    ProgressView()
+                }
+            }
+            .padding(20)
+        }
+        .deskPage(tint: .pagePink)
+        .navigationTitle("Event")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await load() }
+    }
+
+    private func load() async {
+        do {
+            let feed = try await client.welcomeAnnouncements()
+            event = feed.studentAnnouncements.first { $0.id == id }
+            if event == nil { message = "This event isn't on the list." }
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "This event could not be loaded."
         }
     }
 }

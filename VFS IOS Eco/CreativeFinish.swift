@@ -125,9 +125,106 @@ nonisolated struct TasteHit: Decodable, Identifiable {
 nonisolated struct DiscoveryTitlePage: Decodable {
     var media: DiscoveryMedia
     var myReview: MyReview?
+    var community: CommunityStats?
+    var top5Users: Top5Board?
 
     enum CodingKeys: String, CodingKey {
-        case media, myReview
+        case media, myReview, community, top5Users
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        media = try container.decode(DiscoveryMedia.self, forKey: .media)
+        myReview = try container.decodeIfPresent(MyReview.self, forKey: .myReview)
+        community = try? container.decode(CommunityStats.self, forKey: .community)
+        top5Users = try? container.decode(Top5Board.self, forKey: .top5Users)
+    }
+}
+
+nonisolated struct CommunityStats: Decodable {
+    var average: Double?
+    var count: Int
+    var reviews: [CommunityReview]
+
+    enum CodingKeys: String, CodingKey {
+        case average = "avg_rating"
+        case count = "review_count"
+        case reviews
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let number = try? container.decode(Double.self, forKey: .average) {
+            average = number
+        } else if let number = try? container.decode(Int.self, forKey: .average) {
+            average = Double(number)
+        } else {
+            average = nil
+        }
+        count = (try? container.decode(Int.self, forKey: .count)) ?? 0
+        reviews = (try? container.decode([CommunityReview].self, forKey: .reviews)) ?? []
+    }
+}
+
+nonisolated struct CommunityReview: Decodable, Identifiable {
+    var id: Int
+    var name: String
+    var slug: String?
+    var rating: Double
+    var review: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, user, rating, review
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        let person = try container.decodeIfPresent(ReviewAuthor.self, forKey: .user)
+        name = person?.name ?? ""
+        slug = person?.slug
+        if let number = try? container.decode(Double.self, forKey: .rating) {
+            rating = number
+        } else if let number = try? container.decode(Int.self, forKey: .rating) {
+            rating = Double(number)
+        } else if let text = try? container.decode(String.self, forKey: .rating), let number = Double(text) {
+            rating = number
+        } else {
+            rating = 0
+        }
+        review = try container.decodeIfPresent(String.self, forKey: .review)
+    }
+}
+
+nonisolated struct ReviewAuthor: Decodable {
+    var name: String?
+    var slug: String?
+}
+
+nonisolated struct Top5Board: Decodable {
+    var preview: [Top5Person]
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        preview = (try? container.decode([Top5Person].self, forKey: .preview)) ?? []
+    }
+
+    enum CodingKeys: String, CodingKey { case preview }
+}
+
+nonisolated struct Top5Person: Decodable, Identifiable {
+    var name: String
+    var slug: String
+    var note: String?
+    var id: String { slug }
+
+    enum CodingKeys: String, CodingKey { case name, slug, note }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        slug = try container.decodeIfPresent(String.self, forKey: .slug) ?? ""
+        note = try container.decodeIfPresent(String.self, forKey: .note)
     }
 }
 
@@ -391,6 +488,14 @@ struct DiscoveryTitleView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 if let media = page?.media {
+                    if let poster = media.poster, let url = URL(string: poster) {
+                        AsyncImage(url: url) { image in
+                            image.resizable().scaledToFit()
+                        } placeholder: {
+                            Color.stoneLine.frame(height: 180)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
                     Text(media.title)
                         .font(.system(size: 34, weight: .bold, design: .serif))
                         .foregroundStyle(Color.stoneInk)
@@ -424,6 +529,50 @@ struct DiscoveryTitleView: View {
                     Button("Mark seen") { Task { await seen(media) } }
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.ecoOrange)
+                    if let community = page?.community, community.count > 0 {
+                        Text(community.average.map { "Community \(community.count) reviews · \($0, format: .number.precision(.fractionLength(1)))" } ?? "Community \(community.count) reviews")
+                            .font(.headline)
+                            .foregroundStyle(Color.stoneInk)
+                            .padding(.top, 8)
+                        ForEach(community.reviews) { item in
+                            VStack(alignment: .leading, spacing: 4) {
+                                if let slug = item.slug, !slug.isEmpty {
+                                    CreativeLink(route: .profile(slug)) {
+                                        Text(item.name.isEmpty ? "Student" : item.name)
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(Color.ecoOrange)
+                                    }
+                                    .buttonStyle(.plain)
+                                } else if !item.name.isEmpty {
+                                    Text(item.name).font(.caption.weight(.semibold)).foregroundStyle(Color.stoneInk)
+                                }
+                                Text("\(item.rating, format: .number.precision(.fractionLength(1))) / 5")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.stoneMuted)
+                                if let text = item.review, !text.isEmpty {
+                                    Text(text).font(.subheadline).foregroundStyle(Color.stoneInk)
+                                }
+                            }
+                        }
+                    }
+                    if let people = page?.top5Users?.preview.filter({ !$0.slug.isEmpty }), !people.isEmpty {
+                        Text("In a Top 5")
+                            .font(.headline)
+                            .foregroundStyle(Color.stoneInk)
+                            .padding(.top, 8)
+                        ForEach(people) { person in
+                            CreativeLink(route: .profile(person.slug)) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(person.name).font(.subheadline.weight(.semibold)).foregroundStyle(Color.ecoOrange)
+                                    if let note = person.note, !note.isEmpty {
+                                        Text(note).font(.subheadline).foregroundStyle(Color.stoneInk)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 } else if message == nil {
                     ProgressView()
                 }
