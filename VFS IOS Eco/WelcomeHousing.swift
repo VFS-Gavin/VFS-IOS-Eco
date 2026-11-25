@@ -335,6 +335,8 @@ struct HousingSeekingView: View {
         ("commercial_drive", "Commercial Drive"),
         ("main_street", "Main Street"),
     ]
+    @State private var photoItem: PhotosPickerItem?
+    @State private var photoData: Data?
     @State private var message: String?
     @State private var saving = false
 
@@ -399,6 +401,18 @@ struct HousingSeekingView: View {
                 }
                 field("About you", $about)
                 field("Additional notes", $notes)
+                PhotosPicker(selection: $photoItem, matching: .images) {
+                    Text(photoData == nil ? "Add a profile photo" : "Replace profile photo")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.welcomeRed)
+                }
+                .onChange(of: photoItem) { _, item in
+                    Task {
+                        guard let data = try? await item?.loadTransferable(type: Data.self),
+                              let image = UIImage(data: data) else { return }
+                        photoData = image.jpegData(compressionQuality: 0.85)
+                    }
+                }
                 if let message {
                     Text(message).font(.subheadline).foregroundStyle(Color.welcomeRed)
                 }
@@ -450,7 +464,7 @@ struct HousingSeekingView: View {
         }
         if !places.isEmpty { body["location_preference"] = Array(places).sorted() }
         do {
-            message = try await APIClient().submitHousingSeeking(body)
+            message = try await APIClient().submitHousingSeeking(body, photo: photoData)
         } catch APIError.unauthorized {
             session.signOut()
         } catch APIError.message(let text) {
@@ -485,6 +499,8 @@ struct LandlordListingView: View {
     @State private var size = ""
     @State private var laundry = ""
     @State private var parking = ""
+    @State private var features: Set<String> = []
+    @State private var included: Set<String> = []
     @State private var photos: [PhotosPickerItem] = []
     @State private var photoData: [Data] = []
     @State private var message: String?
@@ -557,6 +573,18 @@ struct LandlordListingView: View {
                     Text("None").tag("none")
                 }
                 field("Description", $description)
+                Text("Location").font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+                ForEach(Self.locationChoices, id: \.0) { key, label in
+                    toggleLine(label, on: features.contains(key)) {
+                        if features.contains(key) { features.remove(key) } else { features.insert(key) }
+                    }
+                }
+                Text("Included").font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+                ForEach(Self.includeChoices, id: \.0) { key, label in
+                    toggleLine(label, on: included.contains(key)) {
+                        if included.contains(key) { included.remove(key) } else { included.insert(key) }
+                    }
+                }
                 PhotosPicker(selection: $photos, maxSelectionCount: 8, matching: .images) {
                     Text(photoData.isEmpty ? "Add photos" : "\(photoData.count) photos")
                         .font(.subheadline.weight(.semibold))
@@ -594,6 +622,30 @@ struct LandlordListingView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private static let locationChoices = [
+        ("near_transit", "Near Transit"),
+        ("near_vfs", "Near VFS Campus"),
+        ("near_downtown", "Near Downtown"),
+        ("near_grocery", "Near Grocery Stores"),
+        ("quiet_area", "Quiet Area"),
+    ]
+    private static let includeChoices = [
+        ("electricity", "Electricity"),
+        ("heating", "Heating"),
+        ("internet", "Internet"),
+        ("cable", "Cable TV"),
+        ("water", "Water"),
+    ]
+
+    private func toggleLine(_ label: String, on: Bool, flip: @escaping () -> Void) -> some View {
+        Button(action: flip) {
+            Text(on ? "✓ \(label)" : label)
+                .font(.subheadline)
+                .foregroundStyle(on ? Color.welcomeRed : Color.stoneInk)
+        }
+        .buttonStyle(.plain)
+    }
+
     private func field(_ label: String, _ text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label).font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
@@ -613,8 +665,11 @@ struct LandlordListingView: View {
             "shared_accommodation": shared, "property_description": description,
             "vfs_program": program, "size_sqft": size, "laundry": laundry, "parking": parking,
         ].mapValues { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.value.isEmpty }
+        var lists: [String: [String]] = [:]
+        if !features.isEmpty { lists["location_features"] = features.sorted() }
+        if !included.isEmpty { lists["includes"] = included.sorted() }
         do {
-            message = try await APIClient().submitLandlordListing(fields, photos: photoData)
+            message = try await APIClient().submitLandlordListing(fields, photos: photoData, lists: lists)
         } catch APIError.unauthorized {
             session.signOut()
         } catch APIError.message(let text) {

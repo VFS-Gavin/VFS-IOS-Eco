@@ -300,8 +300,23 @@ nonisolated struct APIClient {
         _ = try await postJSON(OkFlag.self, path: "/api/creative/discovery/challenges/\(id)/response", body: ["body": body])
     }
 
-    func createCollab(_ body: [String: Any]) async throws -> String {
-        try await submitJSON(path: "/api/creative/collabs", body: body)
+    func createCollab(_ body: [String: Any], cover: Data? = nil, gallery: [Data] = []) async throws -> String {
+        guard cover != nil || !gallery.isEmpty else {
+            return try await submitJSON(path: "/api/creative/collabs", body: body)
+        }
+        var files: [(field: String, filename: String, mime: String, data: Data)] = []
+        if let cover {
+            files.append((field: "cover_image", filename: "cover.jpg", mime: "image/jpeg", data: cover))
+        }
+        for (index, image) in gallery.prefix(5).enumerated() {
+            files.append((field: "gallery_images[]", filename: "gallery-\(index).jpg", mime: "image/jpeg", data: image))
+        }
+        let boundary = "vfs-\(UUID().uuidString)"
+        return try await submit(
+            path: "/api/creative/collabs",
+            body: encodedForm(body, files: files, boundary: boundary),
+            contentType: "multipart/form-data; boundary=\(boundary)"
+        )
     }
 
     func sendCollabInquiry(id: Int, body: [String: Any]) async throws {
@@ -352,11 +367,11 @@ nonisolated struct APIClient {
         return !visible
     }
 
-    func submitMultipart(path: String, fields: [String: String], files: [FormAttachment], fileField: String = "supporting_documents[]") async throws -> String {
+    func submitMultipart(path: String, fields: [String: String], files: [FormAttachment], fileField: String = "supporting_documents[]", lists: [String: [String]] = [:]) async throws -> String {
         let boundary = "vfs-\(UUID().uuidString)"
         return try await submit(
             path: path,
-            body: multipart(fields: fields, files: files, fileField: fileField, boundary: boundary),
+            body: multipart(fields: fields, files: files, fileField: fileField, lists: lists, boundary: boundary),
             contentType: "multipart/form-data; boundary=\(boundary)"
         )
     }
@@ -386,15 +401,24 @@ nonisolated struct APIClient {
         try await catalog(HousingStudentsPage.self, path: "/api/welcome/housing/students", missing: "Roommate profiles aren't available from the app yet.").students
     }
 
-    func submitHousingSeeking(_ body: [String: Any]) async throws -> String {
-        try await submitJSON(path: "/api/welcome/housing/student-seeking", body: body)
+    func submitHousingSeeking(_ body: [String: Any], photo: Data? = nil) async throws -> String {
+        guard let photo else {
+            return try await submitJSON(path: "/api/welcome/housing/student-seeking", body: body)
+        }
+        let boundary = "vfs-\(UUID().uuidString)"
+        let file = (field: "profile_photo", filename: "profile.jpg", mime: "image/jpeg", data: photo)
+        return try await submit(
+            path: "/api/welcome/housing/student-seeking",
+            body: encodedForm(body, files: [file], boundary: boundary),
+            contentType: "multipart/form-data; boundary=\(boundary)"
+        )
     }
 
-    func submitLandlordListing(_ fields: [String: String], photos: [Data]) async throws -> String {
+    func submitLandlordListing(_ fields: [String: String], photos: [Data], lists: [String: [String]] = [:]) async throws -> String {
         let files = photos.enumerated().map {
             FormAttachment(filename: "photo-\($0.offset).jpg", mimeType: "image/jpeg", data: $0.element)
         }
-        return try await submitMultipart(path: "/api/welcome/housing/landlord-application", fields: fields, files: files, fileField: "photos[]")
+        return try await submitMultipart(path: "/api/welcome/housing/landlord-application", fields: fields, files: files, fileField: "photos[]", lists: lists)
     }
 
     func registerForHousing(propertyID: Int, body: [String: Any]) async throws -> String {
@@ -709,13 +733,53 @@ nonisolated struct APIClient {
         return data
     }
 
-    private func multipart(fields: [String: String], files: [FormAttachment], fileField: String = "supporting_documents[]", boundary: String) -> Data {
+    private func encodedForm(_ body: [String: Any], files: [(field: String, filename: String, mime: String, data: Data)], boundary: String) -> Data {
+        var data = Data()
+        func part(_ name: String, _ value: String) {
+            data.append(Data("--\(boundary)\r\n".utf8))
+            data.append(Data("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".utf8))
+            data.append(Data(value.utf8))
+            data.append(Data("\r\n".utf8))
+        }
+        for (key, value) in body {
+            if let flag = value as? Bool {
+                part(key, flag ? "1" : "0")
+            } else if let text = value as? String {
+                part(key, text)
+            } else if let list = value as? [String] {
+                for item in list { part("\(key)[]", item) }
+            } else if let rows = value as? [[String: String]] {
+                for (index, row) in rows.enumerated() {
+                    for (field, text) in row { part("\(key)[\(index)][\(field)]", text) }
+                }
+            }
+        }
+        for file in files {
+            data.append(Data("--\(boundary)\r\n".utf8))
+            data.append(Data("Content-Disposition: form-data; name=\"\(file.field)\"; filename=\"\(file.filename)\"\r\n".utf8))
+            data.append(Data("Content-Type: \(file.mime)\r\n\r\n".utf8))
+            data.append(file.data)
+            data.append(Data("\r\n".utf8))
+        }
+        data.append(Data("--\(boundary)--\r\n".utf8))
+        return data
+    }
+
+    private func multipart(fields: [String: String], files: [FormAttachment], fileField: String = "supporting_documents[]", lists: [String: [String]] = [:], boundary: String) -> Data {
         var data = Data()
         for (key, value) in fields {
             data.append(Data("--\(boundary)\r\n".utf8))
             data.append(Data("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".utf8))
             data.append(Data(value.utf8))
             data.append(Data("\r\n".utf8))
+        }
+        for (key, values) in lists {
+            for value in values {
+                data.append(Data("--\(boundary)\r\n".utf8))
+                data.append(Data("Content-Disposition: form-data; name=\"\(key)[]\"\r\n\r\n".utf8))
+                data.append(Data(value.utf8))
+                data.append(Data("\r\n".utf8))
+            }
         }
         for file in files {
             data.append(Data("--\(boundary)\r\n".utf8))

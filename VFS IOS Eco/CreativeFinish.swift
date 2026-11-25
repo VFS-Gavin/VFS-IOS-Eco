@@ -1,4 +1,6 @@
+import PhotosUI
 import SwiftUI
+import UIKit
 
 nonisolated struct OkFlag: Decodable {
     var ok: Bool?
@@ -722,6 +724,10 @@ struct CollabCreateView: View {
     @State private var contact = ""
     @State private var applyURL = ""
     @State private var showContact = true
+    @State private var coverItem: PhotosPickerItem?
+    @State private var coverData: Data?
+    @State private var galleryItems: [PhotosPickerItem] = []
+    @State private var galleryData: [Data] = []
     @State private var message: String?
     @State private var saving = false
 
@@ -759,6 +765,28 @@ struct CollabCreateView: View {
                 TextField("What should they do?", text: $contact, axis: .vertical).textFieldStyle(.roundedBorder)
                 TextField("https://", text: $applyURL).textFieldStyle(.roundedBorder)
                 Toggle("Let people message you from the post", isOn: $showContact)
+                PhotosPicker(selection: $coverItem, matching: .images) {
+                    Text(coverData == nil ? "Add a cover" : "Replace cover")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.collabPurple)
+                }
+                .onChange(of: coverItem) { _, item in
+                    Task { coverData = await Self.jpeg(item) }
+                }
+                PhotosPicker(selection: $galleryItems, maxSelectionCount: 5, matching: .images) {
+                    Text(galleryData.isEmpty ? "Add gallery photos" : "\(galleryData.count) gallery photos")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.collabPurple)
+                }
+                .onChange(of: galleryItems) { _, items in
+                    Task {
+                        var files: [Data] = []
+                        for item in items {
+                            if let jpeg = await Self.jpeg(item) { files.append(jpeg) }
+                        }
+                        galleryData = files
+                    }
+                }
                 if let message {
                     Text(message).font(.subheadline).foregroundStyle(Color.stoneMuted)
                 }
@@ -804,7 +832,7 @@ struct CollabCreateView: View {
         let link = applyURL.trimmingCharacters(in: .whitespacesAndNewlines)
         if !link.isEmpty { body["apply_url"] = link }
         do {
-            message = try await client.createCollab(body)
+            message = try await client.createCollab(body, cover: coverData, gallery: galleryData)
             dismiss()
         } catch APIError.unauthorized {
             session.signOut()
@@ -813,6 +841,12 @@ struct CollabCreateView: View {
         } catch {
             message = "The collaboration could not be posted."
         }
+    }
+
+    private static func jpeg(_ item: PhotosPickerItem?) async -> Data? {
+        guard let data = try? await item?.loadTransferable(type: Data.self),
+              let image = UIImage(data: data) else { return nil }
+        return image.jpegData(compressionQuality: 0.85)
     }
 }
 

@@ -862,11 +862,25 @@ struct CreateProjectView: View {
     @State private var existingMedia: [EditorMedia] = []
     @State private var removedMedia: [Int] = []
     @State private var existingCover: String?
+    @State private var ageRange = ""
+    @State private var gender = ""
+    @State private var genderOther = ""
+    @State private var ethnicity: [String] = []
+    @State private var soundRoles: [String] = []
+    @State private var listenNotes: [String] = []
+    @State private var processNote = ""
+    @State private var cues: [SoundCue] = []
+    @State private var cueTime = ""
+    @State private var cueLabel = ""
     @State private var message: String?
     @State private var saving = false
 
     private let tagPresets = ["Short Film", "Student Film", "Thesis Project", "Demo Reel", "Concept Art", "Character Design", "Storyboard", "Animatic", "Group Project", "Solo Project"]
     private let toolPresets = ["C#", "C++", "JavaScript", "TypeScript", "Python", "Lua", "HLSL", "GLSL", "PHP", "SQL", "HTML", "CSS"]
+    private let soundTools = ["Pro Tools", "Reaper", "Nuendo", "Ableton", "iZotope", "Soundminer"]
+    private let soundRolePresets = ["Sound Designer", "Foley Artist", "Dialogue Editor", "ADR Editor", "Re-recording Mixer", "Supervising Sound Editor", "Composer"]
+    private let listenPresets = ["Best with headphones", "Binaural / spatial", "Game interactive SFX"]
+    private let ethnicities = ["Asian", "Black / African American", "Hispanic / Latino", "Indigenous / First Nations", "Middle Eastern / North African", "Pacific Islander", "South Asian", "White / Caucasian", "Mixed / Multiracial", "Prefer not to say"]
 
     var body: some View {
         ScrollView {
@@ -903,8 +917,14 @@ struct CreateProjectView: View {
                 urlList("YouTube / Vimeo", placeholder: "YouTube or Vimeo URL...", saved: savedEmbeds, items: embeds, draft: $embedDraft, add: addEmbed, removeSaved: dropEmbed)
                 urlList("Game Link", placeholder: "https://yourgame.itch.io/... or Steam / Epic Games Store link", saved: savedGames, items: gameLinks, draft: $gameDraft, add: addGame, removeSaved: dropGame)
                 urlList("3D Viewer", placeholder: "Sketchfab model page or skfb.ly link", saved: savedModels, items: models, draft: $modelDraft, add: addModel, removeSaved: dropModel)
+                if category.hasPrefix("acting") {
+                    performerDetails
+                }
+                if category == "sound_design" || category == "sound" {
+                    soundDetails
+                }
                 chips("Tags", help: "Freeform topic, skill, or genre tags to help people find this project. Not for term or program affiliation.", presets: tagPresets, selected: tags, draft: $tagDraft) { toggleTag($0) }
-                chips("Tools Used", help: "Programming languages", presets: toolPresets, selected: tools, draft: $toolDraft) { toggleTool($0) }
+                chips("Tools Used", help: soundProject ? "Sound tools" : "Programming languages", presets: soundProject ? soundTools : toolPresets, selected: tools, draft: $toolDraft) { toggleTool($0) }
                 collaborators
                 projectLinks
                 Toggle("Published", isOn: $published)
@@ -931,6 +951,61 @@ struct CreateProjectView: View {
         .navigationTitle(projectID == nil ? "New Project" : "Edit Project")
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadEditor() }
+    }
+
+    private var soundProject: Bool { category == "sound_design" || category == "sound" }
+
+    private var performerDetails: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Performer Details").font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            field("Age Range", text: $ageRange)
+            Picker("Gender", selection: $gender) {
+                Text("Select gender").tag("")
+                Text("Man").tag("Man")
+                Text("Woman").tag("Woman")
+                Text("Non-binary").tag("Non-binary")
+                Text("Other / Prefer to self-describe").tag("Other")
+                Text("Prefer not to say").tag("Prefer not to say")
+            }
+            if gender == "Other" {
+                field("Please describe", text: $genderOther)
+            }
+            Text("Race / Ethnicity").font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            FlowTags(items: ethnicities, selected: ethnicity) { toggle(&ethnicity, $0, limit: 20) }
+        }
+    }
+
+    private var soundDetails: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Credits / role").font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            FlowTags(items: soundRolePresets, selected: soundRoles) { toggle(&soundRoles, $0, limit: 20) }
+            Text("Listen notes").font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            FlowTags(items: listenPresets, selected: listenNotes) { toggle(&listenNotes, $0, limit: 10) }
+            field("Process note", text: $processNote)
+            Text("Cue markers").font(.caption.weight(.semibold)).foregroundStyle(Color.stoneMuted)
+            HStack {
+                TextField("Time (s)", text: $cueTime).textFieldStyle(.roundedBorder).keyboardType(.decimalPad)
+                TextField("Label", text: $cueLabel).textFieldStyle(.roundedBorder)
+                Button("Add cue") {
+                    let label = cueLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !cueTime.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !label.isEmpty, cues.count < 50 else { return }
+                    cues.append(SoundCue(time: cueTime.trimmingCharacters(in: .whitespacesAndNewlines), label: label))
+                    cueTime = ""
+                    cueLabel = ""
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.ecoOrange)
+            }
+            ForEach(cues) { cue in
+                HStack {
+                    Text("\(cue.time)s · \(cue.label)").font(.caption).foregroundStyle(Color.stoneInk)
+                    Spacer()
+                    Button("Remove") { cues.removeAll { $0.id == cue.id } }
+                        .font(.caption)
+                        .foregroundStyle(Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255))
+                }
+            }
+        }
     }
 
     private var keptMedia: [EditorMedia] {
@@ -1169,12 +1244,12 @@ struct CreateProjectView: View {
     private func toggleTag(_ raw: String) { toggle(&tags, raw) }
     private func toggleTool(_ raw: String) { toggle(&tools, raw) }
 
-    private func toggle(_ list: inout [String], _ raw: String) {
+    private func toggle(_ list: inout [String], _ raw: String, limit: Int = 20) {
         let item = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !item.isEmpty else { return }
         if let index = list.firstIndex(where: { $0.caseInsensitiveCompare(item) == .orderedSame }) {
             list.remove(at: index)
-        } else if list.count < 20 {
+        } else if list.count < limit {
             list.append(item)
         }
     }
@@ -1209,6 +1284,21 @@ struct CreateProjectView: View {
             link.label.isEmpty ? ["url": link.url] : ["url": link.url, "label": link.label]
         }
         if !urls.isEmpty { body["external_links"] = urls }
+        if category.hasPrefix("acting") {
+            let age = ageRange.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !age.isEmpty { body["actor_age_range"] = age }
+            let chosenGender = gender == "Other" ? (genderOther.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Other" : genderOther.trimmingCharacters(in: .whitespacesAndNewlines)) : gender
+            if !chosenGender.isEmpty { body["actor_gender"] = chosenGender }
+            if !ethnicity.isEmpty { body["actor_ethnicity"] = ethnicity }
+        }
+        if soundProject {
+            if !soundRoles.isEmpty { body["sound_roles"] = soundRoles }
+            if !listenNotes.isEmpty { body["sound_listen_notes"] = listenNotes }
+            let note = processNote.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !note.isEmpty { body["sound_process_note"] = note }
+            let markers = cues.map { ["t": $0.time, "label": $0.label] }
+            if !markers.isEmpty { body["sound_cue_markers"] = markers }
+        }
         do {
             if !embeds.isEmpty { body["new_video_embeds"] = embeds }
             if !gameLinks.isEmpty { body["new_game_links"] = gameLinks }
@@ -1229,6 +1319,12 @@ struct CreateProjectView: View {
             message = projectID == nil ? "The project could not be created." : "The project could not be saved."
         }
     }
+}
+
+private struct SoundCue: Identifiable {
+    let id = UUID()
+    var time: String
+    var label: String
 }
 
 private struct ProjectCredit: Identifiable {
