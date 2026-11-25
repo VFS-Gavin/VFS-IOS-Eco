@@ -326,6 +326,15 @@ struct HousingSeekingView: View {
     @State private var gender = "any"
     @State private var about = ""
     @State private var notes = ""
+    @State private var places: Set<String> = []
+    private let placeChoices = [
+        ("near_transit", "Near Transit"),
+        ("near_vfs", "Near VFS Campus"),
+        ("near_downtown", "Downtown"),
+        ("kitsilano", "Kitsilano"),
+        ("commercial_drive", "Commercial Drive"),
+        ("main_street", "Main Street"),
+    ]
     @State private var message: String?
     @State private var saving = false
 
@@ -368,6 +377,19 @@ struct HousingSeekingView: View {
                     Text("Yes").tag("yes")
                     Text("No").tag("no")
                     Text("No preference").tag("no_preference")
+                }
+                Text("Areas")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.stoneMuted)
+                ForEach(placeChoices, id: \.0) { key, label in
+                    Button {
+                        if places.contains(key) { places.remove(key) } else { places.insert(key) }
+                    } label: {
+                        Text(places.contains(key) ? "✓ \(label)" : label)
+                            .font(.subheadline)
+                            .foregroundStyle(places.contains(key) ? Color.welcomeRed : Color.stoneInk)
+                    }
+                    .buttonStyle(.plain)
                 }
                 Picker("Roommate gender", selection: $gender) {
                     Text("No Preference").tag("any")
@@ -426,6 +448,7 @@ struct HousingSeekingView: View {
             let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty { body[key] = trimmed }
         }
+        if !places.isEmpty { body["location_preference"] = Array(places).sorted() }
         do {
             message = try await APIClient().submitHousingSeeking(body)
         } catch APIError.unauthorized {

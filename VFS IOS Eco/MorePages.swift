@@ -450,3 +450,63 @@ struct WorkshopEventView: View {
         }
     }
 }
+
+struct PitchDetailView: View {
+    @Bindable var session: AppSession
+    var id: Int
+    var client: APIClient = APIClient()
+    @State private var pitch: DiscoveryListItem?
+    @State private var message: String?
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                if let pitch {
+                    Text("Elevator pitch")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color(red: 14 / 255, green: 165 / 255, blue: 233 / 255))
+                    Text(pitch.title)
+                        .font(.system(size: 28, weight: .bold, design: .serif))
+                        .foregroundStyle(Color.stoneInk)
+                    if let subtitle = pitch.subtitle, !subtitle.isEmpty {
+                        Text(subtitle).font(.subheadline).foregroundStyle(Color.stoneMuted)
+                    }
+                    if let body = pitch.body, !body.isEmpty, body != pitch.title {
+                        Text(body).font(.body).foregroundStyle(Color.stoneInk)
+                    }
+                    if let slug = pitch.profileSlug, !slug.isEmpty {
+                        CreativeLink(route: .profile(slug)) {
+                            Text("Open profile")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.ecoOrange)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } else if let message {
+                    Text(message).foregroundStyle(Color.stoneInk)
+                } else {
+                    ProgressView()
+                }
+            }
+            .padding(20)
+        }
+        .background(Color.stone)
+        .navigationTitle("Pitch")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await load() }
+    }
+
+    private func load() async {
+        do {
+            let page = try await client.discoveryList(path: DiscoveryListKind.pitches.path)
+            pitch = page.items.first { $0.id == String(id) }
+            if pitch == nil { message = "This pitch isn't on the list." }
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch APIError.message(let text) {
+            message = text
+        } catch {
+            message = "This pitch could not be loaded."
+        }
+    }
+}

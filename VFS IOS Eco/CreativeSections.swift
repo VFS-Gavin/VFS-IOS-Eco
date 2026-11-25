@@ -282,6 +282,7 @@ struct WorkshopsView: View {
                         .foregroundStyle(Color.stoneMuted)
                 }
                 ForEach(events) { item in
+                    CreativeLink(route: .calendarEvent(item.id)) {
                     VStack(alignment: .leading, spacing: 4) {
                         if let date = item.dateLabel, !date.isEmpty {
                             Text(date).font(.caption.weight(.semibold)).foregroundStyle(pink)
@@ -300,6 +301,8 @@ struct WorkshopsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.card)
                     .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
                 }
                 SiteFooter(session: session)
             }
@@ -492,7 +495,7 @@ struct DiscoveryListView: View {
                     Text(subtitle).font(.caption).foregroundStyle(accent)
                 }
                 if let body = item.body, !body.isEmpty, body != item.title {
-                    Text(body).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(4)
+                    Text(body).font(.subheadline).foregroundStyle(Color.stoneMuted).lineLimit(kind == .pitches ? 2 : 4)
                 }
             }
         }
@@ -501,8 +504,14 @@ struct DiscoveryListView: View {
         .background(Color.card)
         .overlay(Rectangle().stroke(Color.stoneLine, lineWidth: 1))
 
-        if let type = item.mediaType, let externalID = item.externalID, ["film", "tv", "game", "book", "youtube"].contains(type) {
+        if kind == .pitches, let pitchID = Int(item.id) {
+            CreativeLink(route: .pitch(pitchID)) { card }
+                .buttonStyle(.plain)
+        } else if let type = item.mediaType, let externalID = item.externalID, ["film", "tv", "game", "book", "youtube"].contains(type) {
             CreativeLink(route: .discoveryTitle(type, externalID)) { card }
+                .buttonStyle(.plain)
+        } else if let slug = item.profileSlug, !slug.isEmpty {
+            CreativeLink(route: .profile(slug)) { card }
                 .buttonStyle(.plain)
         } else {
             card

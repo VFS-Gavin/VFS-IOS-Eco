@@ -459,6 +459,10 @@ struct WelcomeHubView: View {
                     ConversationView(session: session, id: id)
                 case .form(let link):
                     welcomeForm(link)
+                case .oDayDate(let id):
+                    ODayDateView(session: session, id: id)
+                case .studentEvent(let id):
+                    StudentEventView(session: session, id: id)
                 case .programPrep(let slug):
                     ProgramPrepView(slug: slug)
                 case .summary(let title, let description):

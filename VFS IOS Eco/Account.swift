@@ -175,6 +175,7 @@ enum CreativeRoute: Hashable {
     case studio(String)
     case discoveryTitle(String, String)
     case discoveryPerson(String)
+    case pitch(Int)
     case tasteEditor
     case createCollab
     case grantApply(Int)
@@ -362,6 +363,8 @@ nonisolated enum WelcomeRoute: Hashable {
     case conversation(Int)
     case form(WelcomeFormLink)
     case programPrep(String)
+    case oDayDate(Int)
+    case studentEvent(String)
     case summary(title: String, description: String)
 
     init(card: WelcomeCard) {

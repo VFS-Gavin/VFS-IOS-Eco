@@ -320,6 +320,7 @@ nonisolated struct DiscoveryListItem: Decodable, Identifiable, Equatable {
     var poster: String?
     var mediaType: String?
     var externalID: String?
+    var profileSlug: String?
 
     enum CodingKeys: String, CodingKey {
         case id, title, text, name, body, review, description, category, likes, rating, year
@@ -329,6 +330,8 @@ nonisolated struct DiscoveryListItem: Decodable, Identifiable, Equatable {
         case viewerCount = "viewer_count"
         case favoriteCount = "fav_count"
         case posterURL = "poster_url"
+        case releaseYear = "release_year"
+        case slug
         case creator, user
     }
 
@@ -363,6 +366,8 @@ nonisolated struct DiscoveryListItem: Decodable, Identifiable, Equatable {
         }
         let creator = try container.decodeIfPresent(DiscoveryPerson.self, forKey: .creator)
         let user = try container.decodeIfPresent(DiscoveryPerson.self, forKey: .user)
+        let ownSlug = try container.decodeIfPresent(String.self, forKey: .slug)
+        profileSlug = (ownSlug?.isEmpty == false ? ownSlug : nil) ?? creator?.slug ?? user?.slug
         poster = try container.decodeIfPresent(String.self, forKey: .posterURL) ?? creator?.avatar ?? user?.avatar
         mediaType = try container.decodeIfPresent(String.self, forKey: .mediaType)
         if let text = try? container.decode(String.self, forKey: .externalID) {
@@ -376,7 +381,7 @@ nonisolated struct DiscoveryListItem: Decodable, Identifiable, Equatable {
         var bits: [String] = []
         if let name = creator?.name ?? user?.name, !name.isEmpty { bits.append(name) }
         if let category, !category.isEmpty { bits.append(category) }
-        if let year = Self.numberText(container, .year) { bits.append(year) }
+        if let year = Self.numberText(container, .year) ?? Self.numberText(container, .releaseYear) { bits.append(year) }
         if let likes = Self.wholeNumber(container, .likes) { bits.append("\(likes) likes") }
         if let rating = Self.numberText(container, .rating) { bits.append("\(rating) / 5") }
         if let count = Self.wholeNumber(container, .highlightCount) { bits.append("\(count) highlights") }
@@ -404,6 +409,7 @@ nonisolated struct DiscoveryListItem: Decodable, Identifiable, Equatable {
 nonisolated struct DiscoveryPerson: Decodable, Equatable {
     var name: String?
     var avatar: String?
+    var slug: String?
 }
 
 nonisolated struct DiscoveryListResponse: Decodable {
