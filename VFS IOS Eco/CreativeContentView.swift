@@ -30,6 +30,9 @@ struct ProjectDetailView: View {
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(Color.ecoOrange)
                         }
+                        if let category = project.category, let label = PortfolioView.categoryLabel(category), !label.isEmpty {
+                            Text(label).font(.subheadline).foregroundStyle(Color.stoneMuted)
+                        }
                         if let owner = project.ownerName, !owner.isEmpty {
                             if let slug = project.profileSlug, !slug.isEmpty {
                                 CreativeLink(route: CreativeRoute.profile(slug)) {
@@ -213,6 +216,9 @@ struct ProfileDetailView: View {
                             CreativeLink(route: CreativeRoute.project(project.id)) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(project.title).font(.headline).foregroundStyle(Color.stoneInk)
+                                    if let category = project.category, let label = PortfolioView.categoryLabel(category) {
+                                        Text(label).font(.caption).foregroundStyle(Color.ecoOrange)
+                                    }
                                     Text("\(project.likesCount) likes")
                                         .font(.caption)
                                         .foregroundStyle(Color.stoneMuted)

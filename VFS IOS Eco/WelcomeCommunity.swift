@@ -104,8 +104,22 @@ nonisolated struct ChatPreview: Decodable {
     var body: String?
 }
 
+nonisolated struct MessagePoll: Decodable {
+    var messages: [ChatLine]
+    var timestamp: String?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        messages = (try? container.decode([ChatLine].self, forKey: .messages)) ?? []
+        timestamp = try container.decodeIfPresent(String.self, forKey: .timestamp)
+    }
+
+    enum CodingKeys: String, CodingKey { case messages, timestamp }
+}
+
 nonisolated struct ChatLine: Decodable, Identifiable, Equatable {
     var id: Int
+    var conversationID: Int?
     var body: String
     var senderName: String
     var mine: Bool
@@ -113,6 +127,7 @@ nonisolated struct ChatLine: Decodable, Identifiable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case id, body
+        case conversationID = "conversation_id"
         case senderName = "sender_name"
         case mine = "is_mine"
         case time = "created_at"
@@ -121,6 +136,7 @@ nonisolated struct ChatLine: Decodable, Identifiable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(Int.self, forKey: .id)
+        conversationID = try container.decodeIfPresent(Int.self, forKey: .conversationID)
         body = try container.decodeIfPresent(String.self, forKey: .body) ?? ""
         senderName = try container.decodeIfPresent(String.self, forKey: .senderName) ?? ""
         mine = (try? container.decode(Bool.self, forKey: .mine)) ?? false
@@ -356,6 +372,7 @@ struct ConversationView: View {
     var id: Int
     var client: APIClient = APIClient()
     @State private var lines: [ChatLine] = []
+    @State private var since = ""
     @State private var draft = ""
     @State private var message: String?
     @State private var sending = false
@@ -396,7 +413,15 @@ struct ConversationView: View {
         .background(Color.stone)
         .navigationTitle("Conversation")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await load() }
+        .task {
+            await load()
+            since = ISO8601DateFormatter().string(from: Date())
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 8_000_000_000)
+                if Task.isCancelled { break }
+                await poll()
+            }
+        }
     }
 
     private func load() async {
@@ -409,6 +434,19 @@ struct ConversationView: View {
             message = text
         } catch {
             message = "This conversation isn't available from the app yet."
+        }
+    }
+
+    private func poll() async {
+        guard !since.isEmpty else { return }
+        do {
+            let feed = try await client.pollMessages(since: since, conversationID: id)
+            if let stamp = feed.timestamp, !stamp.isEmpty { since = stamp }
+            let existing = Set(lines.map(\.id))
+            lines.append(contentsOf: feed.messages.filter { $0.conversationID == id && !existing.contains($0.id) })
+        } catch APIError.unauthorized {
+            session.signOut()
+        } catch {
         }
     }
 

@@ -411,7 +411,7 @@ nonisolated struct APIClient {
         return try JSONDecoder().decode(InstructorDirectory.self, from: response.data)
     }
 
-    func portfolio(search: String, professional: Bool, page: Int) async throws -> PortfolioFeed {
+    func portfolio(search: String, professional: Bool, page: Int, category: String = "", sort: String = "", period: String = "", tool: String = "") async throws -> PortfolioFeed {
         var query = [URLQueryItem(name: "page", value: String(page))]
         let trimmed = search.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
@@ -420,6 +420,11 @@ nonisolated struct APIClient {
         if professional {
             query.append(URLQueryItem(name: "professional", value: "1"))
         }
+        if !category.isEmpty { query.append(URLQueryItem(name: "category", value: category)) }
+        if !sort.isEmpty { query.append(URLQueryItem(name: "sort", value: sort)) }
+        if !period.isEmpty, period != "all" { query.append(URLQueryItem(name: "period", value: period)) }
+        let trimmedTool = tool.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedTool.isEmpty { query.append(URLQueryItem(name: "tool", value: trimmedTool)) }
         let response = try await send(path: "/api/creative/portfolio", method: "GET", body: nil, authorize: true, query: query)
         if response.status == 401 {
             KeychainStore.clearToken()
@@ -427,6 +432,14 @@ nonisolated struct APIClient {
         }
         try throwIfNeeded(response, allowSuccess: true)
         return try JSONDecoder().decode(PortfolioFeed.self, from: response.data)
+    }
+
+    func pollMessages(since: String, conversationID: Int) async throws -> MessagePoll {
+        let query = [
+            URLQueryItem(name: "since", value: since),
+            URLQueryItem(name: "conversation_id", value: String(conversationID)),
+        ]
+        return try await authorized(MessagePoll.self, path: "/api/welcome/messages/poll", query: query)
     }
 
     func welcomeAnnouncements() async throws -> WelcomeAnnouncements {
