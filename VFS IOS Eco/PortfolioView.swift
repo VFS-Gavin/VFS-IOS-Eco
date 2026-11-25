@@ -76,6 +76,10 @@ struct PortfolioView: View {
     @State private var projects: [PortfolioProject] = []
     @State private var search = ""
     @State private var professional = false
+    @State private var category = ""
+    @State private var sort = "recent"
+    @State private var period = "all"
+    @State private var tool = ""
     @State private var phase: LoadPhase = .loading
     @State private var loadingMore = false
 
@@ -149,6 +153,12 @@ struct PortfolioView: View {
                 CreativeSearchField(placeholder: "Search projects or creators…", text: $search, identifier: "portfolio-search") {
                     Task { await reload() }
                 }
+                chipRow(sorts, selected: sort) { sort = $0; Task { await reload() } }
+                chipRow(periods, selected: period) { period = $0; Task { await reload() } }
+                chipRow(categories, selected: category) { category = $0; Task { await reload() } }
+                TextField("Tool", text: $tool)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { Task { await reload() } }
 
                 if showProfessionalToggle {
                     Button {
@@ -233,6 +243,12 @@ struct PortfolioView: View {
                         .foregroundStyle(Color.ecoOrange)
                         .lineLimit(1)
                 }
+                if let category = project.category, let label = Self.categoryLabel(category), !label.isEmpty {
+                    Text(label)
+                        .font(.caption2)
+                        .foregroundStyle(Color.stoneMuted)
+                        .lineLimit(1)
+                }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
@@ -259,10 +275,39 @@ struct PortfolioView: View {
             .clipped()
     }
 
+    private let sorts = [("recent", "Recent"), ("trending", "Trending"), ("popular", "Popular")]
+    private let periods = [("all", "All time"), ("7", "Last 7 days"), ("14", "Last 14 days"), ("30", "Last 30 days")]
+
+    private var categories: [(String, String)] {
+        [("", "All Categories")] + ProfilePrograms.options + [("other", "Other")]
+    }
+
+    private func chipRow(_ options: [(String, String)], selected: String, choose: @escaping (String) -> Void) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(options, id: \.0) { option in
+                    Button(option.1) { choose(option.0) }
+                        .buttonStyle(.plain)
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .foregroundStyle(selected == option.0 ? Color.stoneInk : Color.stoneMuted)
+                        .background(selected == option.0 ? Color.ecoOrange.opacity(0.18) : Color.card)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(selected == option.0 ? Color.ecoOrange : Color.stoneLine, lineWidth: 1))
+                }
+            }
+        }
+    }
+
+    static func categoryLabel(_ key: String) -> String? {
+        if key == "other" { return "Other" }
+        return ProfilePrograms.options.first { $0.key == key }?.label ?? key.replacingOccurrences(of: "_", with: " ")
+    }
+
     private func reload() async {
         phase = .loading
         do {
-            let page = try await client.portfolio(search: search, professional: professional, page: 1)
+            let page = try await client.portfolio(search: search, professional: professional, page: 1, category: category, sort: sort, period: period, tool: tool)
             feed = page
             projects = page.projects.data
             phase = .ready
@@ -279,7 +324,7 @@ struct PortfolioView: View {
         guard let feed, feed.projects.hasMore, !loadingMore else { return }
         loadingMore = true
         do {
-            let page = try await client.portfolio(search: search, professional: professional, page: feed.projects.currentPage + 1)
+            let page = try await client.portfolio(search: search, professional: professional, page: feed.projects.currentPage + 1, category: category, sort: sort, period: period, tool: tool)
             self.feed = page
             let existing = Set(projects.map(\.id))
             projects.append(contentsOf: page.projects.data.filter { !existing.contains($0.id) })
